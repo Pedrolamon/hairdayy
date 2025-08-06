@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "outDir": "dist",
+    "rootDir": "./", // Isso está correto, se o tsconfig.json estiver na raiz do seu backend
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts",          // Inclui todos os arquivos .ts dentro de 'src' e seus subdiretórios
+    "entity/**/*.ts",       // Inclui todos os arquivos .ts dentro de 'entity' e seus subdiretórios
+    "jobs/**/*.ts",         // Inclui todos os arquivos .ts dentro de 'jobs' e seus subdiretórios
+    "data-source.ts",       // Inclui o arquivo data-source.ts diretamente na raiz do backend
+    "index.ts",             // Inclui o arquivo index.ts diretamente na raiz do backend
+    "middleware/**/*.ts",   // Se 'middleware' é uma pasta separada na raiz do backend
+    "routes/**/*.ts"        // Se 'routes' é uma pasta separada na raiz do backend
+  ],
+  "exclude": ["node_modules", "dist"]
+}
