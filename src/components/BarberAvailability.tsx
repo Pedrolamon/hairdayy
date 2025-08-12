@@ -22,7 +22,6 @@ const BarberAvailability: React.FC = () => {
 
   useEffect(() => {
     fetchBlocks();
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {

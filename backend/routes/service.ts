@@ -1,53 +1,84 @@
-import { Router } from "express";
-import { AppDataSource } from "../data-source";
-import { Service } from "../entity/Service";
-import { authenticateJWT, AuthRequest } from "../middleware/auth";
+import { Router, Request, Response } from 'express';
+import prisma from '../prisma'; // Certifique-se de que o Prisma Client está inicializado aqui
+import { authenticateJWT, AuthRequest } from '../middleware/auth';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
-const repo = () => AppDataSource.getRepository(Service);
 
 // Listar todos os serviços
-router.get("/", authenticateJWT, async (req, res) => {
-  const services = await repo().find();
-  res.json(services);
+router.get('/', authenticateJWT, async (req: Request, res: Response) => {
+  try {
+    const services = await prisma.service.findMany();
+    res.json(services);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar serviços.' });
+  }
 });
 
 // Obter serviço por ID
-router.get("/:id", authenticateJWT, async (req, res) => {
-  const service = await repo().findOneBy({ id: Number(req.params.id) });
-  if (!service) return res.status(404).json({ message: "Serviço não encontrado." });
-  res.json(service);
+router.get("/:id", authenticateJWT, async (req: Request, res: Response) => {
+  const serviceId = req.params.id; // O id do params já é uma string
+  try {
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+    if (!service) {
+      return res.status(404).json({ message: "Serviço não encontrado." });
+    }
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao obter serviço.' });
+  }
 });
 
 // Criar serviço
-router.post("/", authenticateJWT, async (req: AuthRequest, res) => {
+router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { name, duration, price } = req.body;
   if (!name || !duration || !price) {
     return res.status(400).json({ message: "Nome, duração e preço são obrigatórios." });
   }
-  const service = repo().create({ name, duration, price });
-  await repo().save(service);
-  res.status(201).json(service);
+  try {
+    const service = await prisma.service.create({
+      data: { name, duration, price },
+    });
+    res.status(201).json(service);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao criar serviço.' });
+  }
 });
 
 // Atualizar serviço
-router.put("/:id", authenticateJWT, async (req, res) => {
+router.put("/:id", authenticateJWT, async (req: Request, res: Response) => {
   const { name, duration, price } = req.body;
-  const service = await repo().findOneBy({ id: Number(req.params.id) });
-  if (!service) return res.status(404).json({ message: "Serviço não encontrado." });
-  service.name = name ?? service.name;
-  service.duration = duration ?? service.duration;
-  service.price = price ?? service.price;
-  await repo().save(service);
-  res.json(service);
+  const serviceId = req.params.id;
+  try {
+    const service = await prisma.service.update({
+      where: { id: serviceId },
+      data: { name, duration, price },
+    });
+    res.json(service);
+  } catch (error: any) {
+    if (error.code === 'P2025') { // Erro do Prisma para registro não encontrado
+      return res.status(404).json({ message: "Serviço não encontrado." });
+    }
+    res.status(500).json({ error: 'Erro ao atualizar serviço.' });
+  }
 });
 
 // Deletar serviço
-router.delete("/:id", authenticateJWT, async (req, res) => {
-  const service = await repo().findOneBy({ id: Number(req.params.id) });
-  if (!service) return res.status(404).json({ message: "Serviço não encontrado." });
-  await repo().remove(service);
-  res.json({ message: "Serviço removido." });
+router.delete("/:id", authenticateJWT, async (req: Request, res: Response) => {
+  const serviceId = req.params.id;
+  try {
+    await prisma.service.delete({
+      where: { id: serviceId },
+    });
+    res.json({ message: "Serviço removido." });
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: "Serviço não encontrado." });
+    }
+    res.status(500).json({ error: 'Erro ao deletar serviço.' });
+  }
 });
 
-export default router; 
+export default router;

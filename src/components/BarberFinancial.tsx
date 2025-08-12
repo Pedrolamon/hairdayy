@@ -1,6 +1,19 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  PlusCircle,
+  Pencil,
+  Trash2,
+  X,
+  CheckCircle,
+  Search,
+} from 'lucide-react';
 
+// Interfaces para os tipos de dados
 interface Report {
   totalReceitas: number;
   totalDespesas: number;
@@ -16,14 +29,23 @@ interface Report {
   }>;
 }
 
+// Componente de Spinner customizado para remover dependências externas
+const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?: string }) => (
+  <div
+    style={{ width: size, height: size, borderTopColor: color }}
+    className="animate-spin rounded-full border-2 border-solid border-white border-opacity-20"
+  />
+);
+
 const BarberFinancial: React.FC = () => {
   const { token } = useAuth();
+
+  // Estados da aplicação
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // Formulário manual
   const [form, setForm] = useState({
     type: 'income',
     amount: '',
@@ -32,47 +54,67 @@ const BarberFinancial: React.FC = () => {
     category: '',
   });
   const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState('');
-  const [formSuccess, setFormSuccess] = useState('');
-  const [editing, setEditing] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   const amountInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchReport();
-    // eslint-disable-next-line
-  }, [startDate, endDate]);
+  // Exibe uma mensagem temporária
+  const showMessage = (text: string, type: 'success' | 'error') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: '', type: '' }), 5000); // Esconde a mensagem após 5 segundos
+  };
 
+  // Efeito para focar no campo de valor quando em modo de edição
   useEffect(() => {
-    if (editing && amountInputRef.current) {
+    if (editingId && amountInputRef.current) {
       amountInputRef.current.focus();
     }
-  }, [editing]);
+  }, [editingId]);
 
-  const fetchReport = () => {
+  // Efeito para buscar o relatório quando o token ou as datas mudam
+  useEffect(() => {
+    fetchReport();
+  }, [token, startDate, endDate]);
+
+  // Função para buscar o relatório financeiro
+  const fetchReport = async () => {
+    if (!token) {
+      showMessage('Token de autenticação não encontrado.', 'error');
+      return;
+    }
     setLoading(true);
-    setError('');
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    fetch(`/api/financial/report?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(res => res.json())
-      .then(data => {
-        setReport(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Erro ao buscar relatório financeiro.');
-        setLoading(false);
+
+    const url = `/api/financial/report?${params.toString()}`;
+
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) {
+        throw new Error('Erro ao buscar relatório financeiro.');
+      }
+
+      const data = await res.json();
+      setReport(data);
+    } catch (e: any) {
+      showMessage(e.message, 'error');
+      setReport(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Lidar com a mudança nos campos do formulário
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleEdit = (r: any) => {
+  // Preencher o formulário para edição
+  const handleEdit = (r: Report['registros'][0]) => {
     setForm({
       type: r.type,
       amount: String(r.amount),
@@ -80,43 +122,55 @@ const BarberFinancial: React.FC = () => {
       date: r.date,
       category: r.category,
     });
-    setEditing(r.id);
+    setEditingId(r.id);
   };
+
+  // Deletar um registro
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Remover este registro?')) return;
-    setLoading(true);
+    // Substituindo window.confirm por um feedback visual
+    if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
+
+    if (!token) return;
+    setLoading(true); // Indica que algo está sendo processado
     try {
       const res = await fetch(`/api/financial/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        throw new Error('Erro ao remover registro.');
+      }
+      showMessage('Registro removido com sucesso!', 'success');
       fetchReport();
-    } catch {
-      setError('Erro ao remover registro.');
+    } catch (e: any) {
+      showMessage(e.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  // Submeter o formulário (criar ou atualizar)
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      showMessage('Token de autenticação não encontrado.', 'error');
+      return;
+    }
     setFormLoading(true);
-    setFormError('');
-    setFormSuccess('');
+
     if (!form.date) {
-      setFormError('Data é obrigatória.');
+      showMessage('Data é obrigatória.', 'error');
       setFormLoading(false);
       return;
     }
     if (Number(form.amount) <= 0) {
-      setFormError('Valor deve ser maior que zero.');
+      showMessage('Valor deve ser maior que zero.', 'error');
       setFormLoading(false);
       return;
     }
     try {
-      const method = editing ? 'PUT' : 'POST';
-      const url = editing ? `/api/financial/${editing}` : '/api/financial';
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId ? `/api/financial/${editingId}` : '/api/financial';
       const res = await fetch(url, {
         method,
         headers: {
@@ -128,165 +182,296 @@ const BarberFinancial: React.FC = () => {
           amount: Number(form.amount),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || (editingId ? 'Erro ao atualizar registro.' : 'Erro ao lançar registro.'));
+      }
       setForm({ type: 'income', amount: '', description: '', date: '', category: '' });
-      setEditing(null);
-      setFormSuccess(editing ? 'Registro atualizado com sucesso!' : 'Registro lançado com sucesso!');
+      setEditingId(null);
+      showMessage(editingId ? 'Registro atualizado com sucesso!' : 'Registro lançado com sucesso!', 'success');
       fetchReport();
-    } catch {
-      setFormError('Erro ao lançar registro.');
+    } catch (e: any) {
+      showMessage(e.message, 'error');
     } finally {
       setFormLoading(false);
     }
   };
 
   return (
-    <div>
-      <h3 className="text-lg font-bold mb-4">Relatório Financeiro</h3>
-      {editing && (
-        <button type="button" className="text-sm text-gray-500 hover:underline" onClick={() => { setEditing(null); setForm({ type: 'income', amount: '', description: '', date: '', category: '' }); setFormError(''); setFormSuccess(''); }}>Cancelar edição</button>
-      )}
-      <form onSubmit={handleFormSubmit} className="bg-gray-50 rounded p-4 mb-6 flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
-        <select
-          name="type"
-          className="border rounded px-2 py-1"
-          value={form.type}
-          onChange={handleFormChange}
-        >
-          <option value="income">Receita</option>
-          <option value="expense">Despesa</option>
-        </select>
-        <input
-          ref={amountInputRef}
-          name="amount"
-          type="number"
-          step="0.01"
-          min="0"
-          className="border rounded px-2 py-1"
-          placeholder="Valor"
-          value={form.amount}
-          onChange={handleFormChange}
-          required
-        />
-        <input
-          name="category"
-          className="border rounded px-2 py-1"
-          placeholder="Categoria"
-          value={form.category}
-          onChange={handleFormChange}
-          required
-        />
-        <input
-          name="date"
-          type="date"
-          className="border rounded px-2 py-1"
-          value={form.date}
-          onChange={handleFormChange}
-          required
-        />
-        <input
-          name="description"
-          className="border rounded px-2 py-1 flex-1"
-          placeholder="Descrição"
-          value={form.description}
-          onChange={handleFormChange}
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          disabled={formLoading}
-        >
-          {formLoading ? 'Salvando...' : 'Lançar'}
-        </button>
-        {formError && <div className="text-red-500 text-sm">{formError}</div>}
-        {formSuccess && <div className="text-green-600 text-sm">{formSuccess}</div>}
-      </form>
-      <div className="flex gap-2 mb-4">
-        <input
-          type="date"
-          className="border rounded px-2 py-1"
-          value={startDate}
-          onChange={e => setStartDate(e.target.value)}
-        />
-        <span className="self-center">até</span>
-        <input
-          type="date"
-          className="border rounded px-2 py-1"
-          value={endDate}
-          onChange={e => setEndDate(e.target.value)}
-        />
-        {(startDate || endDate) && (
-          <button
-            className="ml-2 text-sm text-gray-500 hover:underline"
-            onClick={() => { setStartDate(''); setEndDate(''); }}
+    <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
+      <div className="max-w-7xl mx-auto">
+        {/* Mensagens de feedback (toast) */}
+        {message.text && (
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up ${
+              message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}
           >
-            Limpar filtro
-          </button>
+            {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <X className="w-5 h-5" />}
+            <span>{message.text}</span>
+          </div>
         )}
-      </div>
-      {loading && <div className="text-gray-500">Carregando relatório...</div>}
-      {error && <div className="text-red-500">{error}</div>}
-      {report && (
-        <>
-          <div className="mb-4 flex flex-wrap gap-6">
-            <div className="bg-green-100 rounded p-3">
-              <div className="text-green-700 font-bold">Receitas</div>
-              <div className="text-2xl font-bold">R$ {report.totalReceitas.toFixed(2)}</div>
+
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+            <DollarSign className="w-8 h-8" />
+            Gerenciar Finanças
+          </h2>
+
+          {/* Formulário de Lançamento */}
+          <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mb-6">
+            <div className="flex flex-col">
+              <label htmlFor="type" className="text-sm text-gray-600 mb-1">
+                Tipo
+              </label>
+              <select
+                id="type"
+                name="type"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                value={form.type}
+                onChange={handleFormChange}
+              >
+                <option value="income">Receita</option>
+                <option value="expense">Despesa</option>
+              </select>
             </div>
-            <div className="bg-red-100 rounded p-3">
-              <div className="text-red-700 font-bold">Despesas</div>
-              <div className="text-2xl font-bold">R$ {report.totalDespesas.toFixed(2)}</div>
+            <div className="flex flex-col">
+              <label htmlFor="amount" className="text-sm text-gray-600 mb-1">
+                Valor
+              </label>
+              <input
+                ref={amountInputRef}
+                id="amount"
+                name="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={handleFormChange}
+                required
+              />
             </div>
-            <div className="bg-blue-100 rounded p-3">
-              <div className="text-blue-700 font-bold">Balanço</div>
-              <div className="text-2xl font-bold">R$ {report.balanco.toFixed(2)}</div>
+            <div className="flex flex-col">
+              <label htmlFor="category" className="text-sm text-gray-600 mb-1">
+                Categoria
+              </label>
+              <input
+                id="category"
+                name="category"
+                type="text"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Ex: Salário, Material, Aluguel"
+                value={form.category}
+                onChange={handleFormChange}
+                required
+              />
             </div>
+            <div className="flex flex-col">
+              <label htmlFor="date" className="text-sm text-gray-600 mb-1">
+                Data
+              </label>
+              <input
+                id="date"
+                name="date"
+                type="date"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                value={form.date}
+                onChange={handleFormChange}
+                required
+              />
+            </div>
+            <div className="flex flex-col lg:col-span-3">
+              <label htmlFor="description" className="text-sm text-gray-600 mb-1">
+                Descrição (opcional)
+              </label>
+              <input
+                id="description"
+                name="description"
+                type="text"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Descrição detalhada do registro"
+                value={form.description}
+                onChange={handleFormChange}
+              />
+            </div>
+            <div className="flex items-center gap-2 lg:col-span-1">
+              {editingId && (
+                <button
+                  type="button"
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition flex-grow"
+                  onClick={() => {
+                    setForm({ type: 'income', amount: '', description: '', date: '', category: '' });
+                    setEditingId(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex-grow flex items-center justify-center gap-2"
+                disabled={formLoading}
+              >
+                {formLoading ? (
+                  <LoadingSpinner color="#fff" />
+                ) : (
+                  <>
+                    {editingId ? <Pencil className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+                    {editingId ? 'Salvar Edição' : 'Lançar'}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Filtro de datas */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-8 flex flex-col md:flex-row items-center gap-4 border border-gray-200">
+            <h4 className="font-semibold text-sm text-gray-600 flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              Filtrar por data:
+            </h4>
+            <div className="flex items-center gap-2">
+              <label htmlFor="startDate" className="sr-only">Data de Início</label>
+              <input
+                id="startDate"
+                type="date"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <span className="text-gray-500 text-sm">até</span>
+              <label htmlFor="endDate" className="sr-only">Data de Fim</label>
+              <input
+                id="endDate"
+                type="date"
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            {(startDate || endDate) && (
+              <button
+                className="text-sm text-gray-500 hover:text-blue-600 transition"
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                }}
+              >
+                Limpar filtro
+              </button>
+            )}
           </div>
-          <div className="mb-4">
-            <div className="font-semibold mb-2">Por categoria:</div>
-            <ul className="space-y-1">
-              {Object.entries(report.porCategoria).map(([cat, val]) => (
-                <li key={cat} className="flex gap-4">
-                  <span className="font-bold">{cat}:</span>
-                  <span className="text-green-700">Receita: R$ {val.income.toFixed(2)}</span>
-                  <span className="text-red-700">Despesa: R$ {val.expense.toFixed(2)}</span>
-                </li>
-              ))}
-              {Object.keys(report.porCategoria).length === 0 && <li className="text-gray-500">Nenhuma categoria encontrada.</li>}
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold mb-2">Registros:</div>
-            <ul className="divide-y">
-              {report.registros.map(r => (
-                <li key={r.id} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        </div>
+
+        {/* Relatório Financeiro */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-2xl font-bold mb-6 text-gray-900">Relatório</h3>
+
+          {loading ? (
+            <div className="flex justify-center p-8">
+              <LoadingSpinner size="50" color="#4F46E5" />
+            </div>
+          ) : report ? (
+            <>
+              {/* Cards de resumo */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="bg-green-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
+                  <TrendingUp className="w-10 h-10 text-green-600" />
                   <div>
-                    <span className={r.type === 'income' ? 'text-green-700' : 'text-red-700'}>
-                      {r.type === 'income' ? 'Receita' : 'Despesa'}
-                    </span>
-                    <span className="ml-2 font-semibold">R$ {r.amount.toFixed(2)}</span>
-                    <span className="ml-2 text-gray-500 text-sm">{r.date && new Date(r.date).toLocaleDateString()}</span>
-                    <span className="ml-2 text-gray-500 text-sm">{r.category}</span>
+                    <div className="text-green-700 font-semibold text-sm">Receitas Totais</div>
+                    <div className="text-3xl font-bold text-green-900">R$ {report.totalReceitas.toFixed(2)}</div>
                   </div>
-                  <div className="text-sm text-gray-700 flex gap-2 items-center">{r.description}
-                    <button className="bg-yellow-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1" onClick={() => handleEdit(r)} disabled={formLoading}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 11l6 6M3 21h6v-6l9-9a2.828 2.828 0 10-4-4l-9 9z" /></svg>
-                      Editar
-                    </button>
-                    <button className="bg-red-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1" onClick={() => handleDelete(r.id)} disabled={formLoading}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                      Remover
-                    </button>
+                </div>
+                <div className="bg-red-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
+                  <TrendingDown className="w-10 h-10 text-red-600" />
+                  <div>
+                    <div className="text-red-700 font-semibold text-sm">Despesas Totais</div>
+                    <div className="text-3xl font-bold text-red-900">R$ {report.totalDespesas.toFixed(2)}</div>
                   </div>
-                </li>
-              ))}
-              {report.registros.length === 0 && <li className="text-gray-500">Nenhum registro encontrado.</li>}
-            </ul>
-          </div>
-        </>
-      )}
+                </div>
+                <div className="bg-blue-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
+                  <Scale className="w-10 h-10 text-blue-600" />
+                  <div>
+                    <div className="text-blue-700 font-semibold text-sm">Balanço</div>
+                    <div className="text-3xl font-bold text-blue-900">R$ {report.balanco.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabela de Registros */}
+              <h4 className="text-xl font-bold mb-4 text-gray-900">Registros Detalhados</h4>
+              <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {report.registros.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${r.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {r.type === 'income' ? 'Receita' : 'Despesa'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap font-bold">
+                          R$ {r.amount.toFixed(2)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {r.category || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {r.description || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {r.date && new Date(r.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                          <button
+                            onClick={() => handleEdit(r)}
+                            className="text-blue-600 hover:text-blue-900"
+                            disabled={loading || formLoading}
+                          >
+                            <Pencil className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            className="text-red-600 hover:text-red-900"
+                            disabled={loading || formLoading}
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {report.registros.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                          Nenhum registro encontrado para este período.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-gray-500 p-8">
+              Nenhum dado financeiro disponível.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default BarberFinancial; 
+export default BarberFinancial;

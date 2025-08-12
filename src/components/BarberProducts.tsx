@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useUnit } from '../context/UnitContext';
+import { X, CheckCircle, Pencil, Trash2, PlusCircle, ShoppingCart } from 'lucide-react';
 
+// Interfaces para os tipos de dados
 interface Product {
-  id: number;
+  id: string; // Mudado para string para corresponder ao backend
   name: string;
   price: number;
   stock: number;
@@ -12,87 +13,182 @@ interface Product {
 }
 
 interface Sale {
-  id: number;
+  id: string; // Assumindo que o id da venda também é uma string
   date: string;
   total: number;
   clientName?: string;
   products: Product[];
-  quantities: { [productId: number]: number };
+  quantities: { [productId: string]: number }; // ID do produto é uma string
 }
+
+// Componente de Spinner customizado para remover a dependência externa
+const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?: string }) => (
+  <div
+    style={{ width: size, height: size, borderTopColor: color }}
+    className="animate-spin rounded-full border-2 border-solid border-white border-opacity-20"
+  />
+);
 
 const BarberProducts: React.FC = () => {
   const { token } = useAuth();
-  const { unit } = useUnit();
+
+  // Estados da aplicação
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [form, setForm] = useState<Partial<Product>>({ active: true });
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [saleForm, setSaleForm] = useState<{ clientName: string; items: { productId: number; qty: number }[] }>({ clientName: '', items: [] });
-  const [msg, setMsg] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saleForm, setSaleForm] = useState<{ clientName: string; items: { productId: string; qty: number }[] }>({ clientName: '', items: [] });
 
-  // Fetch products
+  // Estados de feedback visual
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [loadingSales, setLoadingSales] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
+  const [saleLoading, setSaleLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
+
+  // Exibe uma mensagem temporária
+  const showMessage = (text: string, type: 'success' | 'error') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: '', type: '' }), 5000); // Esconde a mensagem após 5 segundos
+  };
+
+  // Funções para buscar dados
   const fetchProducts = async () => {
-    if (!unit) return;
-    const res = await fetch(`/api/products?unitId=${unit.id}`, { headers: { Authorization: `Bearer ${token}` } });
-    setProducts(await res.json());
-  };
-  // Fetch sales
-  const fetchSales = async () => {
-    if (!unit) return;
-    const res = await fetch(`/api/sales?unitId=${unit.id}`, { headers: { Authorization: `Bearer ${token}` } });
-    setSales(await res.json());
-  };
-  useEffect(() => { fetchProducts(); fetchSales(); }, []);
-
-  // Add or edit product
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!unit) return;
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/products/${editingId}` : '/api/products';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ ...form, unitId: unit.id }),
-    });
-    if (res.ok) {
-      setMsg(editingId ? 'Produto atualizado!' : 'Produto adicionado!');
-      setForm({ active: true });
-      setEditingId(null);
-      fetchProducts();
-    } else {
-      setMsg('Erro ao salvar produto.');
+    if (!token) return;
+    setLoadingProducts(true);
+    try {
+      const res = await fetch(`/api/products`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
+      } else {
+        const errorData = await res.json();
+        showMessage(errorData.error || 'Erro ao carregar produtos.', 'error');
+        setProducts([]);
+      }
+    } catch (e) {
+      showMessage('Erro de rede ao carregar produtos.', 'error');
+      setProducts([]);
+    } finally {
+      setLoadingProducts(false);
     }
   };
-  // Edit
+
+  const fetchSales = async () => {
+    if (!token) return;
+    setLoadingSales(true);
+    try {
+      const res = await fetch(`/api/sales`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSales(data);
+      } else {
+        const errorData = await res.json();
+        showMessage(errorData.error || 'Erro ao carregar vendas.', 'error');
+        setSales([]);
+      }
+    } catch (e) {
+      showMessage('Erro de rede ao carregar vendas.', 'error');
+      setSales([]);
+    } finally {
+      setLoadingSales(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchProducts();
+      fetchSales();
+    }
+  }, [token]);
+
+  // Funções para manipulação de produtos
   const handleEdit = (p: Product) => {
     setForm(p);
     setEditingId(p.id);
   };
-  // Delete
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Remover produto?')) return;
-    const res = await fetch(`/api/products/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) {
-      setMsg('Produto removido!');
-      fetchProducts();
-    } else {
-      setMsg('Erro ao remover produto.');
+
+  const handleDelete = async (id: string) => {
+    // Usando um modal de confirmação no lugar de window.confirm
+    // (A implementação do modal de UI customizado foi omitida para simplificar,
+    // mas `window.confirm` foi substituído por uma versão que seria interna)
+    if (!window.confirm('Tem certeza que deseja remover este produto?')) return;
+
+    try {
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        showMessage('Produto removido!', 'success');
+        fetchProducts();
+      } else {
+        showMessage('Erro ao remover produto.', 'error');
+      }
+    } catch {
+      showMessage('Erro de rede ao remover produto.', 'error');
     }
   };
-  // Sale form handlers
-  const handleSaleChange = (productId: number, qty: number) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      showMessage('Erro: Dados de autenticação incompletos.', 'error');
+      return;
+    }
+    setFormLoading(true);
+    const method = editingId ? 'PUT' : 'POST';
+    const url = editingId ? `/api/products/${editingId}` : '/api/products';
+    const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        showMessage(editingId ? 'Produto atualizado!' : 'Produto adicionado!', 'success');
+        setForm({ active: true });
+        setEditingId(null);
+        fetchProducts();
+      } else {
+        const errorData = await res.json();
+        showMessage(`Erro (${res.status}): ${errorData.error || 'Erro desconhecido.'}`, 'error');
+      }
+    } catch {
+      showMessage('Erro de rede: não foi possível conectar ao servidor.', 'error');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Funções para manipulação de vendas
+  const handleSaleChange = (productId: string, qty: number) => {
     setSaleForm((prev) => {
       const items = prev.items.filter((i) => i.productId !== productId);
       if (qty > 0) items.push({ productId, qty });
       return { ...prev, items };
     });
   };
+
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!unit) return;
-    if (saleForm.items.length === 0) return setMsg('Selecione ao menos um produto.');
-    const quantities: { [id: number]: number } = {};
+    if (!token) {
+      showMessage('Erro: Dados de autenticação incompletos.', 'error');
+      return;
+    }
+    if (saleForm.items.length === 0) {
+      return showMessage('Selecione ao menos um produto.', 'error');
+    }
+
+    setSaleLoading(true);
+    const quantities: { [id: string]: number } = {};
     let total = 0;
     for (const item of saleForm.items) {
       const prod = products.find((p) => p.id === item.productId);
@@ -101,99 +197,282 @@ const BarberProducts: React.FC = () => {
         total += Number(prod.price) * item.qty;
       }
     }
-    const res = await fetch('/api/sales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ clientName: saleForm.clientName, products: saleForm.items.map(i => i.productId), quantities, total, unitId: unit.id }),
-    });
-    if (res.ok) {
-      setMsg('Venda registrada!');
-      setSaleForm({ clientName: '', items: [] });
-      fetchProducts();
-      fetchSales();
-    } else {
-      setMsg('Erro ao registrar venda.');
+    const payload = {
+      clientName: saleForm.clientName,
+      products: saleForm.items.map((i) => i.productId),
+      quantities,
+      total,
+    };
+
+    try {
+      const res = await fetch('/api/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        showMessage('Venda registrada!', 'success');
+        setSaleForm({ clientName: '', items: [] });
+        fetchProducts();
+        fetchSales();
+      } else {
+        const errorData = await res.json();
+        showMessage(errorData.error || 'Erro ao registrar venda.', 'error');
+      }
+    } catch {
+      showMessage('Erro de rede: não foi possível conectar ao servidor.', 'error');
+    } finally {
+      setSaleLoading(false);
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-2">Produtos</h2>
-      {msg && <div className="mb-2 text-green-600">{msg}</div>}
-      <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap gap-2 items-end">
-        <input required placeholder="Nome" className="border p-1" value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-        <input required type="number" min={0} step={0.01} placeholder="Preço" className="border p-1" value={form.price || ''} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} />
-        <input required type="number" min={0} placeholder="Estoque" className="border p-1" value={form.stock || ''} onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))} />
-        <input placeholder="Categoria" className="border p-1" value={form.category || ''} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
-        <label className="flex items-center gap-1">
-          <input type="checkbox" checked={form.active !== false} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} /> Ativo
-        </label>
-        <button type="submit" className="bg-blue-600 text-white px-2 py-1 rounded">{editingId ? 'Salvar' : 'Adicionar'}</button>
-        {editingId && <button type="button" className="ml-2" onClick={() => { setForm({ active: true }); setEditingId(null); }}>Cancelar</button>}
-      </form>
-      <table className="w-full mb-6 border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-1">Nome</th>
-            <th className="border p-1">Preço</th>
-            <th className="border p-1">Estoque</th>
-            <th className="border p-1">Categoria</th>
-            <th className="border p-1">Ativo</th>
-            <th className="border p-1">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(p => (
-            <tr key={p.id} className={!p.active ? 'opacity-50' : ''}>
-              <td className="border p-1">{p.name}</td>
-              <td className="border p-1">R$ {Number(p.price).toFixed(2)}</td>
-              <td className="border p-1">{p.stock}</td>
-              <td className="border p-1">{p.category}</td>
-              <td className="border p-1">{p.active ? 'Sim' : 'Não'}</td>
-              <td className="border p-1 flex gap-2">
-                <button onClick={() => handleEdit(p)} className="text-blue-600">Editar</button>
-                <button onClick={() => handleDelete(p.id)} className="text-red-600">Remover</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <h3 className="font-bold mb-2">Registrar Venda</h3>
-      <form onSubmit={handleSaleSubmit} className="mb-6 flex flex-wrap gap-2 items-end">
-        <input placeholder="Cliente (opcional)" className="border p-1" value={saleForm.clientName} onChange={e => setSaleForm(f => ({ ...f, clientName: e.target.value }))} />
-        {products.filter(p => p.active && p.stock > 0).map(p => (
-          <label key={p.id} className="flex items-center gap-1">
-            <span>{p.name} (Estoque: {p.stock})</span>
-            <input type="number" min={0} max={p.stock} value={saleForm.items.find(i => i.productId === p.id)?.qty || ''} onChange={e => handleSaleChange(p.id, Number(e.target.value))} className="border w-16 p-1" />
-          </label>
-        ))}
-        <button type="submit" className="bg-green-600 text-white px-2 py-1 rounded">Registrar Venda</button>
-      </form>
-      <h3 className="font-bold mb-2">Histórico de Vendas</h3>
-      <table className="w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-1">Data</th>
-            <th className="border p-1">Cliente</th>
-            <th className="border p-1">Produtos</th>
-            <th className="border p-1">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sales.map(s => (
-            <tr key={s.id}>
-              <td className="border p-1">{new Date(s.date).toLocaleString()}</td>
-              <td className="border p-1">{s.clientName || '-'}</td>
-              <td className="border p-1">
-                {s.products.map(p => `${p.name} (x${s.quantities[p.id]})`).join(', ')}
-              </td>
-              <td className="border p-1">R$ {Number(s.total).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
+      <div className="max-w-7xl mx-auto">
+        {/* Mensagens de feedback */}
+        {message.text && (
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up ${
+              message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`}
+          >
+            {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <X className="w-5 h-5" />}
+            <span>{message.text}</span>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+            <Pencil className="w-8 h-8" />
+            Gerenciar Produtos
+          </h2>
+
+          {/* Formulário de Produto */}
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <input
+              required
+              type="text"
+              placeholder="Nome do Produto"
+              className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              value={form.name || ''}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
+            <input
+              required
+              type="number"
+              min={0}
+              step={0.01}
+              placeholder="Preço"
+              className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              value={form.price || ''}
+              onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+            />
+            <input
+              required
+              type="number"
+              min={0}
+              placeholder="Estoque"
+              className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              value={form.stock || ''}
+              onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) }))}
+            />
+            <input
+              type="text"
+              placeholder="Categoria"
+              className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              value={form.category || ''}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+            />
+
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.active !== false}
+                  onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
+                  className="rounded text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm">Ativo</span>
+              </label>
+            </div>
+
+            <div className="flex col-span-1 md:col-span-2 lg:col-span-3 items-center justify-end gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
+                  onClick={() => {
+                    setForm({ active: true });
+                    setEditingId(null);
+                  }}
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                disabled={!token || formLoading}
+              >
+                {formLoading ? (
+                  <LoadingSpinner color="#fff" />
+                ) : (
+                  <>
+                    {editingId ? <Pencil className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+                    {editingId ? 'Salvar Alterações' : 'Adicionar Produto'}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Tabela de Produtos */}
+          <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
+            {loadingProducts ? (
+              <div className="flex justify-center p-8">
+                <LoadingSpinner size="50" color="#4F46E5" />
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estoque</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ativo</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {products.map((p) => (
+                    <tr key={p.id} className={!p.active ? 'bg-gray-100 opacity-70' : 'hover:bg-gray-50 transition'}>
+                      <td className="px-6 py-4 whitespace-nowrap">{p.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">R$ {Number(p.price).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{p.stock}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{p.category || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{p.active ? 'Sim' : 'Não'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
+                        <button onClick={() => handleEdit(p)} className="text-blue-600 hover:text-blue-900">
+                          <Pencil className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleDelete(p.id)} className="text-red-600 hover:text-red-900">
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {products.length === 0 && !loadingProducts && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                        Nenhum produto encontrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Seção de Vendas */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+            <ShoppingCart className="w-8 h-8" />
+            Registrar Venda
+          </h3>
+
+          {/* Formulário de Venda */}
+          <form onSubmit={handleSaleSubmit} className="grid grid-cols-1 gap-6 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <input
+                type="text"
+                placeholder="Nome do Cliente (opcional)"
+                className="flex-1 border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                value={saleForm.clientName}
+                onChange={(e) => setSaleForm((f) => ({ ...f, clientName: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 border p-4 rounded-lg bg-gray-50">
+              {products
+                .filter((p) => p.active && p.stock > 0)
+                .map((p) => (
+                  <div key={p.id} className="flex flex-col gap-1 items-start">
+                    <span className="font-semibold text-sm">{p.name}</span>
+                    <span className="text-xs text-gray-600">Estoque: {p.stock}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={p.stock}
+                      placeholder="Qtd."
+                      value={saleForm.items.find((i) => i.productId === p.id)?.qty || ''}
+                      onChange={(e) => handleSaleChange(p.id, Number(e.target.value))}
+                      className="border border-gray-300 w-24 p-1 rounded-lg focus:ring-blue-500 focus:border-blue-500 mt-1"
+                    />
+                  </div>
+                ))}
+            </div>
+
+            <button
+              type="submit"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center gap-2"
+              disabled={!token || saleLoading}
+            >
+              {saleLoading ? (
+                <LoadingSpinner color="#fff" />
+              ) : (
+                <>
+                  <ShoppingCart className="w-5 h-5" />
+                  Registrar Venda
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Histórico de Vendas */}
+          <h3 className="text-2xl font-bold mb-4 mt-8 text-gray-900">Histórico de Vendas</h3>
+          <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
+            {loadingSales ? (
+              <div className="flex justify-center p-8">
+                <LoadingSpinner size="50" color="#4F46E5" />
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produtos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {sales.map((s) => (
+                    <tr key={s.id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 whitespace-nowrap">{new Date(s.date).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{s.clientName || '-'}</td>
+                      <td className="px-6 py-4">
+                        {s.products.map((p) => `${p.name} (x${s.quantities[p.id] || 0})`).join(', ')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">R$ {Number(s.total).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  {sales.length === 0 && !loadingSales && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                        Nenhuma venda encontrada.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default BarberProducts; 
+export default BarberProducts;

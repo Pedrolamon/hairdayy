@@ -1,6 +1,14 @@
+"use client";
 import React, { useState } from 'react';
+// Importações de componentes Shadcn/ui
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+// Importação da sua função de utilidade para classes do Tailwind
+import { cn } from "../lib/utils";
 
-// Define the structure for the form data
+// Define a estrutura para os dados do formulário
 interface RegisterFormData {
   name: string;
   email: string;
@@ -10,21 +18,21 @@ interface RegisterFormData {
 }
 
 const RegisterForm: React.FC = () => {
-  // State to hold form input values
+  // Estado para os valores de entrada do formulário
   const [formData, setFormData] = useState<RegisterFormData>({
     name: '',
     email: '',
     password: '',
-    role: 'barber', // Default role as per your backend
+    role: 'barber',
     phone: '',
   });
 
-  // State for messages (success or error)
+  // Estado para mensagens (sucesso ou erro)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  // State for loading indicator
+  // Estado para o indicador de carregamento
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Handle input changes and update the form data state
+  // Manipula as mudanças de entrada e atualiza o estado
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -33,15 +41,15 @@ const RegisterForm: React.FC = () => {
     }));
   };
 
-  // Handle form submission
+  // Manipula o envio do formulário
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default browser form submission
-    setLoading(true);   // Set loading to true when submission starts
-    setMessage(null);   // Clear previous messages
+    e.preventDefault(); // Previne o envio padrão do formulário
+    setLoading(true);
+    setMessage(null);
 
     try {
-      // Make the API call to your backend's /register endpoint
-      const response = await fetch('http://localhost:4000/api/auth/register', { // Adjust the URL if your backend is on a different port/domain
+      // Faz a chamada à API para o seu backend
+      const response = await fetch('http://localhost:4000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,9 +60,7 @@ const RegisterForm: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // If registration is successful
-        setMessage({ type: 'success', text: data.message || 'Registration successful!' });
-        // Optionally clear the form after successful registration
+        setMessage({ type: 'success', text: data.message || 'Cadastro realizado com sucesso!' });
         setFormData({
           name: '',
           email: '',
@@ -63,130 +69,143 @@ const RegisterForm: React.FC = () => {
           phone: '',
         });
       } else {
-        // If there's an error from the backend
-        setMessage({ type: 'error', text: data.message || 'Registration failed.' });
+        setMessage({ type: 'error', text: data.message || 'Falha no cadastro.' });
       }
     } catch (error) {
-      // Catch network errors or other unexpected issues
-      console.error('Error during registration:', error);
-      setMessage({ type: 'error', text: 'Network error or server unavailable. Please try again later.' });
+      console.error('Erro durante o cadastro:', error);
+      setMessage({ type: 'error', text: 'Erro de rede ou servidor indisponível. Tente novamente mais tarde.' });
     } finally {
-      setLoading(false); // Set loading to false after submission completes
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Register Account</h2>
+    <div className="flex min-h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900 font-sans p-4">
+      <div className="w-full max-w-2xl">
+        <Card className="overflow-hidden p-0">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <div className="p-6 md:p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="flex flex-col items-center text-center">
+                  <h1 className="text-2xl font-bold">Crie sua conta</h1>
+                  <p className="text-muted-foreground text-balance">
+                    Cadastre-se para ter acesso completo
+                  </p>
+                </div>
+                
+                {/* Exibe as mensagens de sucesso ou erro */}
+                {message && (
+                  <div
+                    className={cn(
+                      "p-3 rounded-md text-sm",
+                      message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    )}
+                  >
+                    {message.text}
+                  </div>
+                )}
+                
+                {/* Name Input */}
+                <div className="grid gap-3">
+                  <Label htmlFor="name">Nome</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-        {/* Display messages */}
-        {message && (
-          <div
-            className={`p-3 mb-4 rounded-md text-sm ${
-              message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+                {/* Email Input */}
+                <div className="grid gap-3">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name Input */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
+                {/* Password Input */}
+                <div className="grid gap-3">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-          {/* Email Input */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
+                {/* Role Select */}
+                <div className="grid gap-3">
+                  <Label htmlFor="role">Função</Label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="barber">Barbeiro</option>
+                    <option value="client">Cliente</option>
+                  </select>
+                </div>
 
-          {/* Password Input */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
+                {/* Phone Input */}
+                <div className="grid gap-3">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
+                </div>
 
-          {/* Role Select */}
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            >
-              <option value="barber">Barber</option>
-              <option value="client">Client</option>
-              {/* Add other roles if applicable */}
-            </select>
-          </div>
-
-          {/* Phone Input */}
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
-            </label>
-            <input
-              type="tel" // Use type="tel" for phone numbers
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading} // Disable button while loading
-            className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-              loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
-            }`}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Cadastrando...' : 'Cadastrar'}
+                </Button>
+                
+                <div className="text-center text-sm">
+                  Já tem uma conta?
+                  {" "}
+                  <a href="/login" className="underline underline-offset-4" onClick={(e) => e.preventDefault()}>
+                    Entrar
+                  </a>
+                </div>
+              </form>
+            </div>
+            
+            <div className="bg-muted relative hidden md:block">
+              <img
+                src="https://placehold.co/1000x1000/E2E8F0/1E293B?text=Welcome"
+                alt="Imagem de fundo"
+                className="absolute inset-0 h-full w-full object-cover rounded-tr-xl rounded-br-xl dark:brightness-[0.2] dark:grayscale"
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 };
 
-export default RegisterForm;
+// Componente principal para demonstração
+export default function App() {
+  return (
+    <RegisterForm />
+  );
+}

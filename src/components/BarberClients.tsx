@@ -32,7 +32,6 @@ const BarberClients: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {

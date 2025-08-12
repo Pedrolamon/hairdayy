@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -8,14 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Unit {
-  id           String        @id @default(uuid())
-  name         String
-  address      String?
-  phone        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  appointments Appointment[]
+enum UserRole {
+  ADMIN
+  BARBER
+  CLIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  ATTENDED
+  NO_SHOW
+  CANCELLED
+}
+
+enum ReminderChannel {
+  NONE
+  EMAIL
+  WHATSAPP
+  BOTH
 }
 
 model Service {
@@ -30,33 +40,90 @@ model Service {
 }
 
 model User {
-  id                 String        @id @default(uuid())
+  id                 String          @id @default(uuid())
   name               String
-  email              String        @unique
+  email              String          @unique
   password           String
-  role               String        @default("client")
+  role               UserRole        @default(CLIENT)
   phone              String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  barberAppointments Appointment[] @relation("BarberAppointments")
-  clientAppointments Appointment[] @relation("ClientAppointments")
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  barber             Barber?
+  clientAppointments Appointment[]   @relation("ClientAppointments")
+  reminderChannel    ReminderChannel @default(BOTH)
+}
+
+model Barber {
+  id           String              @id @default(uuid())
+  commission   Float?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+  availability AvailabilityBlock[]
+}
+
+model FinancialRecord {
+  id            String       @id @default(uuid())
+  type          String
+  amount        Decimal      @db.Decimal(10, 2)
+  description   String?
+  date          DateTime     @db.Date
+  category      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+}
+
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date
+  startTime String
+  endTime   String
+  reason    String?
+  barberId  String
+  barber    Barber   @relation(fields: [barberId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id       String        @id @default(uuid())
+  name     String
+  price    Float
+  stock    Int
+  category String?
+  active   Boolean       @default(true)
+  sales    SaleProduct[]
+}
+
+model Sale {
+  id         String        @id @default(uuid())
+  date       DateTime      @default(now())
+  total      Float
+  clientName String?
+  quantities Json
+  products   SaleProduct[]
 }
 
 model Appointment {
-  id        String               @id @default(uuid())
-  date      DateTime             @db.Date
-  startTime String
-  endTime   String
-  status    AppointmentStatus    @default(scheduled)
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  clientId  String
-  barberId  String
-  unitId    String
-  barber    User                 @relation("BarberAppointments", fields: [barberId], references: [id])
-  client    User                 @relation("ClientAppointments", fields: [clientId], references: [id])
-  unit      Unit                 @relation(fields: [unitId], references: [id])
-  services  AppointmentService[]
+  id              String               @id @default(uuid())
+  date            DateTime             @db.Date
+  startTime       String
+  endTime         String
+  status          AppointmentStatus    @default(SCHEDULED)
+  reminderSent    Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  clientId        String
+  barberId        String
+  barber          Barber               @relation(fields: [barberId], references: [id])
+  client          User                 @relation("ClientAppointments", fields: [clientId], references: [id])
+  services        AppointmentService[]
+  financialRecord FinancialRecord?
 }
 
 model AppointmentService {
@@ -69,159 +136,21 @@ model AppointmentService {
   @@id([appointmentId, serviceId])
 }
 
-model appointment {
-  id                              Int                            @id(map: "PK_e8be1a53027415e709ce8a2db74") @default(autoincrement())
-  date                            String                         @db.VarChar
-  startTime                       String                         @db.VarChar
-  endTime                         String                         @db.VarChar
-  status                          String                         @db.VarChar
-  reminderSent                    Boolean                        @default(false)
-  reminderChannel                 String                         @default("email") @db.VarChar
-  createdAt                       DateTime                       @default(now()) @db.Timestamp(6)
-  updatedAt                       DateTime                       @default(now()) @db.Timestamp(6)
-  userId                          Int?
-  barberId                        Int?
-  unitId                          Int?
-  user_appointment_userIdTouser   user?                          @relation("appointment_userIdTouser", fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2a990a304a43ccc7415bf7e3a99")
-  user_appointment_barberIdTouser user?                          @relation("appointment_barberIdTouser", fields: [barberId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_762ec86fc96339cc983c3a77a5b")
-  unit                            unit?                          @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8d75bfc5e6ab3108f8df548c174")
-  appointment_services_service    appointment_services_service[]
-  financial_record                financial_record[]
+model SaleProduct {
+  saleId    String
+  productId String
+  quantity  Int?
+  product   Product @relation(fields: [productId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id])
+
+  @@id([saleId, productId])
 }
 
-model appointment_services_service {
-  appointmentId Int
-  serviceId     Int
-  appointment   appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, map: "FK_068bb879d26fb9346383fa611bd")
-  service       service     @relation(fields: [serviceId], references: [id], onDelete: Cascade, map: "FK_6c22108412ee27973c0d93235b4")
-
-  @@id([appointmentId, serviceId], map: "PK_af8047314c8290ffc59fa8b8128")
-  @@index([appointmentId], map: "IDX_068bb879d26fb9346383fa611b")
-  @@index([serviceId], map: "IDX_6c22108412ee27973c0d93235b")
-}
-
-model availability_block {
-  id        Int     @id(map: "PK_e1445c6b2755ac833669e12f2ab") @default(autoincrement())
-  date      String  @db.VarChar
-  startTime String  @db.VarChar
-  endTime   String  @db.VarChar
-  reason    String? @db.VarChar
-  barberId  Int?
-  barber    barber? @relation(fields: [barberId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_22eeffcb0c58b6517a510b085dc")
-}
-
-model barber {
-  id                 Int                  @id(map: "PK_393a066f1a87c8642e776ba7054") @default(autoincrement())
-  name               String               @db.VarChar
-  commission         Decimal?             @db.Decimal(5, 2)
-  createdAt          DateTime             @default(now()) @db.Timestamp(6)
-  updatedAt          DateTime             @default(now()) @db.Timestamp(6)
-  unitId             Int?
-  availability_block availability_block[]
-  unit               unit?                @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_321bd54d9b70053dca75082832d")
-}
-
-model financial_record {
-  id            Int          @id(map: "PK_58648da3acbf92d19f46a9ab8f0") @default(autoincrement())
-  type          String       @db.VarChar
-  amount        Decimal      @db.Decimal(10, 2)
-  description   String       @db.VarChar
-  date          String       @db.VarChar
-  category      String       @db.VarChar
-  createdAt     DateTime     @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime     @default(now()) @db.Timestamp(6)
-  appointmentId Int?
-  appointment   appointment? @relation(fields: [appointmentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0341e81d0e7ec0c085f39c42f42")
-}
-
-model notification {
-  id     Int      @id(map: "PK_705b6c7cdf9b2c2ff7ac7872cb7") @default(autoincrement())
-  userId Int
-  title  String   @db.VarChar
-  body   String   @db.VarChar
-  date   DateTime @default(now()) @db.Timestamp(6)
+model Notification {
+  id     String   @id @default(uuid())
+  userId String
+  title  String
+  body   String
+  date   DateTime @default(now())
   read   Boolean  @default(false)
-}
-
-model product {
-  id                    Int                     @id(map: "PK_bebc9158e480b949565b4dc7a82") @default(autoincrement())
-  name                  String                  @db.VarChar
-  price                 Decimal                 @db.Decimal(10, 2)
-  stock                 Int
-  category              String?                 @db.VarChar
-  active                Boolean                 @default(true)
-  unitId                Int?
-  unit                  unit?                   @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2ee96d5eff55f14a6e37470b782")
-  sale_products_product sale_products_product[]
-}
-
-model sale {
-  id                    Int                     @id(map: "PK_d03891c457cbcd22974732b5de2") @default(autoincrement())
-  date                  DateTime                @default(now()) @db.Timestamp(6)
-  total                 Decimal                 @db.Decimal(10, 2)
-  clientName            String?                 @db.VarChar
-  quantities            Json
-  sale_products_product sale_products_product[]
-}
-
-model sale_products_product {
-  saleId    Int
-  productId Int
-  product   product @relation(fields: [productId], references: [id], onDelete: Cascade, map: "FK_4e537a454b2d5fb3df653bbabef")
-  sale      sale    @relation(fields: [saleId], references: [id], onDelete: Cascade, map: "FK_d0390564ee502415f34c629ea1a")
-
-  @@id([saleId, productId], map: "PK_e81a9bdb9f8a6b2afa9d6ea6a94")
-  @@index([productId], map: "IDX_4e537a454b2d5fb3df653bbabe")
-  @@index([saleId], map: "IDX_d0390564ee502415f34c629ea1")
-}
-
-model service {
-  id                           Int                            @id(map: "PK_85a21558c006647cd76fdce044b") @default(autoincrement())
-  name                         String                         @db.VarChar
-  duration                     Int
-  price                        Decimal                        @db.Decimal(10, 2)
-  createdAt                    DateTime                       @default(now()) @db.Timestamp(6)
-  updatedAt                    DateTime                       @default(now()) @db.Timestamp(6)
-  appointment_services_service appointment_services_service[]
-}
-
-model unit {
-  id          Int           @id(map: "PK_4252c4be609041e559f0c80f58a") @default(autoincrement())
-  name        String        @db.VarChar
-  address     String?       @db.VarChar
-  phone       String?       @db.VarChar
-  createdAt   DateTime      @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime      @default(now()) @db.Timestamp(6)
-  appointment appointment[]
-  barber      barber[]
-  product     product[]
-  user        user[]
-}
-
-model user {
-  id                                     Int            @id(map: "PK_cace4a159ff9f2512dd42373760") @default(autoincrement())
-  name                                   String         @db.VarChar
-  email                                  String         @unique(map: "UQ_e12875dfb3b1d92d7d7c5377e22") @db.VarChar
-  password                               String         @db.VarChar
-  role                                   user_role_enum @default(barber)
-  phone                                  String?        @db.VarChar
-  createdAt                              DateTime       @default(now()) @db.Timestamp(6)
-  updatedAt                              DateTime       @default(now()) @db.Timestamp(6)
-  unitId                                 Int?
-  appointment_appointment_userIdTouser   appointment[]  @relation("appointment_userIdTouser")
-  appointment_appointment_barberIdTouser appointment[]  @relation("appointment_barberIdTouser")
-  unit                                   unit?          @relation(fields: [unitId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_856a1f0347b672d3b8bb4693bd8")
-}
-
-enum AppointmentStatus {
-  scheduled
-  completed
-  attended
-  no_show
-  cancelled
-}
-
-enum user_role_enum {
-  admin
-  barber
 }

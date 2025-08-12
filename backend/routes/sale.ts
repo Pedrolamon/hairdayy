@@ -1,49 +1,115 @@
 import { Router, Request, Response } from 'express';
-import { AppDataSource } from '../data-source';
-import { Sale } from '../entity/Sale';
-import { Product } from '../entity/Product';
-import { authenticateJWT } from '../middleware/auth';
+import { PrismaClient, Product } from '@prisma/client';
+import prisma from '../prisma'; // Assumindo que o Prisma Client está inicializado aqui
+import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
 const router = Router();
-const saleRepo = AppDataSource.getRepository(Sale);
-const productRepo = AppDataSource.getRepository(Product);
 
 // Listar vendas
-router.get('/', authenticateJWT, async (_req: Request, res: Response) => {
-  const sales = await saleRepo.find({ relations: ['products'] });
-  res.json(sales);
+router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
+  try {
+    const sales = await prisma.sale.findMany({
+      include: {
+        products: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+    res.json(sales);
+  } catch (error: unknown) {
+    res.status(500).json({ error: 'Erro ao listar vendas.' });
+  }
 });
 
 // Registrar venda
-router.post('/', authenticateJWT, async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { clientName, products, quantities, total } = req.body;
+
   try {
-    // Buscar produtos
-    const productEntities = await productRepo.findByIds(products);
-    // Baixar estoque
-    for (const prod of productEntities) {
-      const qty = quantities[prod.id] || 1;
-      if (prod.stock < qty) {
-        return res.status(400).json({ error: `Estoque insuficiente para ${prod.name}` });
+    // Usando transação para garantir atomicidade
+    const newSale = await prisma.$transaction(async (tx) => {
+      // Mapear os IDs dos produtos para um array de strings
+      const productIds = products as string[];
+
+      // Buscar produtos e verificar estoque
+      const productEntities = await tx.product.findMany({
+        where: {
+          id: { in: productIds },
+        },
+      });
+
+      // Mapear produtos para um objeto de fácil acesso
+      const productMap = new Map(productEntities.map((p: Product) => [p.id, p]));
+
+      for (const productId of productIds) {
+        const product = productMap.get(productId);
+        const quantity = quantities[productId] || 1;
+
+        if (!product || product.stock < quantity) {
+          throw new Error(`Estoque insuficiente ou produto não encontrado para o ID: ${productId}`);
+        }
+
+        // Atualizar estoque
+        await tx.product.update({
+          where: { id: productId },
+          data: { stock: { decrement: quantity } },
+        });
       }
-      prod.stock -= qty;
-      await productRepo.save(prod);
-    }
-    // Criar venda
-    const sale = saleRepo.create({ clientName, products: productEntities, quantities, total });
-    await saleRepo.save(sale);
-    res.status(201).json(sale);
+
+      // Criar a venda e a tabela de união (SaleProduct)
+      const sale = await tx.sale.create({
+        data: {
+          clientName,
+          total,
+          quantities,
+          products: {
+            create: productIds.map(productId => ({
+              quantity: quantities[productId] || 1,
+              product: {
+                connect: { id: productId },
+              },
+            })),
+          },
+        },
+        include: {
+          products: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
+      return sale;
+    });
+
+    res.status(201).json(newSale);
+
   } catch (err) {
-    res.status(400).json({ error: 'Erro ao registrar venda', details: err });
+    const errorMessage = (err instanceof Error) ? err.message : 'Erro desconhecido ao registrar venda.';
+    res.status(400).json({ error: 'Erro ao registrar venda', details: errorMessage });
   }
 });
 
 // Detalhes de venda
 router.get('/:id', authenticateJWT, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const sale = await saleRepo.findOne({ where: { id: Number(id) }, relations: ['products'] });
-  if (!sale) return res.status(404).json({ error: 'Venda não encontrada' });
+  const sale = await prisma.sale.findUnique({
+    where: { id },
+    include: {
+      products: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  if (!sale) {
+    return res.status(404).json({ error: 'Venda não encontrada' });
+  }
   res.json(sale);
 });
 
-export default router; 
+export default router;
