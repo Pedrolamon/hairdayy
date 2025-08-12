@@ -1,66 +1,44 @@
 "use client";
+
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import { cn } from "../lib/utils";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/use-auth';
 
-// A interface Props foi simplificada para incluir apenas a prop 'className',
-// já que a lógica de login agora é gerenciada pelo hook useAuth.
-interface Props {
+interface LoginPageProps {
   className?: string;
 }
 
-// A prop 'onLogin' foi removida da desestruturação do objeto de props.
-const Login: React.FC<Props> = ({className, ...props }) => {
+export default function LoginPage({ className }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const navigate = useNavigate();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // TODO: remove later and add React Hook Form
     e.preventDefault();
+
     setLoading(true);
     setError('');
+
     try {
-      console.log('LOGIN_FORM: Tentando fazer login...');
-      const res = await fetch('http://localhost:4000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        console.error('LOGIN_FORM: Falha no login. Resposta:', res.status, res.statusText);
-        throw new Error('Credenciais inválidas');
-      }
-
-      const data = await res.json();
-      
-      // Corrigido: Apenas a função 'login' do useAuth é chamada.
-      // A chamada 'onLogin(data.token, data.user);' foi removida,
-      // pois é redundante e causava um erro de tipo.
-      login(data.token, data.user); 
-
-      console.log('LOGIN_FORM: Login bem-sucedido. Dados recebidos:', data);
-      console.log('LOGIN_FORM: Função login() do AuthContext chamada. Navegando para o dashboard.');
-      navigate('/barber/agenda');
+      await login(email, password)
     } catch (err) {
-      console.error('LOGIN_FORM: Erro durante o processo de login.', err);
-      setError('E-mail ou senha inválidos.');
+      // todo
     } finally {
-      setLoading(false);
+      // todo
     }
   };
 
   return (
-    <div className={cn("flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 font-sans", className)} {...props}>
+    <div className={cn("flex min-h-screen w-full items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 font-sans", className)}>
       <div className="w-full max-w-2xl">
         <Card className="overflow-hidden p-0">
           <CardContent className="grid p-0 md:grid-cols-2">
@@ -181,5 +159,3 @@ const Login: React.FC<Props> = ({className, ...props }) => {
     </div>
   );
 };
-
-export default Login;
