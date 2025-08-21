@@ -1,5 +1,3 @@
-import { Navigate } from "react-router-dom";
-
 import { LoadingSpinner } from "../../components/ui/loading-spinner";
 import { useAuth } from "../../hooks/use-auth";
 
@@ -8,14 +6,10 @@ type GuestRouteProps = {
 };
 
 export function GuestRoute({ children }: GuestRouteProps) {
-  const { isAuth, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner fullPage size="lg" />;
-  }
-
-  if (isAuth) {
-    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

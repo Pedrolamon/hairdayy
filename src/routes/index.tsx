@@ -8,7 +8,7 @@ import BarberRoutesWithLayout from "../routes/RoutesWithLayout";
 
 // Pages
 import LoginPage from "../pages/LoginPage";
-import  Register from "../pages/Register";
+import Register from "../pages/Register";
 import { Index } from "../pages/HomePage";
 import Dashboard from "../pages/DashboardPage"
 import Agenda from "../pages/AgendaPage"
@@ -18,12 +18,8 @@ import Clients from "../pages/ClientsPage"
 import Financial from "../pages/FinancialPage"
 import NotificationPanel from "../pages/NotificationPanel"
 import Products from "../pages/ProductsPage"
-import  ServiceForm from "../pages/ServiceForm"
+import ServiceForm from "../pages/ServiceForm"
 import Services from "../pages/BarberServices";
-
-
-
-
 
 const publicRoutes = [
   {

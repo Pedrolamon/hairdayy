@@ -55,15 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(AUTH_TOKEN_CONSTANT, token)
     api.defaults.headers["Authorization"] = `Bearer ${token}`
 
-
     navigate("/dashboard") 
   };
 
   const checkSession = async () => {
     try {
-      console.log("📡 checkSession rodando...")
       const user = await AuthMe()
-      console.log("✅ AuthMe retornou:", user)
 
       if(!user) {
         throw new Error("User not found")
@@ -71,8 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(user)
       setIsAuth(true)
-
-      navigate("/dashboard") 
     } catch {
       console.error("❌ checkSession falhou:")
       logout()
@@ -84,11 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     setIsLoading(true)
 
+    // Check if token exists
     const token = localStorage.getItem(AUTH_TOKEN_CONSTANT)
 
+    // If it doesn't exist, means the user is not auth, just ignore
     if(!token) {
-      logout()
-      return
+      setIsLoading(false)
+
+      return // Continue
     }
 
     api.defaults.headers["Authorization"] = `Bearer ${token}`
