@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../lib/api';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -48,48 +49,62 @@ export default function Chatbot () {
   const [rescheduleTimes, setRescheduleTimes] = useState<string[]>([]);
   const [reminderChannel, setReminderChannel] = useState<'email' | 'whatsapp' | 'both' | 'none'>('email');
 
+
+  async function fetchServices() {
+    setLoading(true);
+    try {
+      const { data: apiServices } = await api.get("/services")
+      setServices(apiServices)
+    } catch (error) {
+      console.log(error)
+      // TODO: show toast message to the user
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function fetchBarbers() {
+    setLoading(true);
+    try {
+      const { data: apiBarbers } = await api.get("/barbers")
+      setBarbers(apiBarbers)
+    } catch (error) {
+      console.log(error)
+      setError('Erro ao buscar barbeiros.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function fetchAvailableTimes() {
+    setLoading(true);
+    setAvailableTimes([]);
+    setError('');
+    try {
+      const { data: apiTimes } = await api.get('/appointments/available', {
+        params: {
+          serviceId: selectedService?.id,
+          barberId: selectedBarber?.id,
+          date: selectedDate
+        }
+      });
+      setAvailableTimes(apiTimes);
+    } catch (error) {
+      setError('Erro ao buscar horários disponíveis.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    if (step === 'service') {
-      setLoading(true);
-      fetch('/services')
-        .then(res => res.json())
-        .then(data => {
-          setServices(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setError('Erro ao buscar serviços.');
-          setLoading(false);
-        });
+    if (step === 'service') {      
+      fetchServices();
     }
     if (step === 'barber') {
-      setLoading(true);
-      fetch('/barbers')
-        .then(res => res.json())
-        .then(data => {
-          setBarbers(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setError('Erro ao buscar barbeiros.');
-          setLoading(false);
-        });
+      fetchBarbers();
     }
-    // Buscar horários disponíveis só quando step === 'time' e data selecionada
     if (step === 'time' && selectedService && selectedBarber && selectedDate) {
-      setLoading(true);
-      setAvailableTimes([]);
-      setError('');
-      fetch(`/appointments/available?serviceId=${selectedService.id}&barberId=${selectedBarber.id}&date=${selectedDate}`)
-        .then(res => res.json())
-        .then(data => {
-          setAvailableTimes(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setError('Erro ao buscar horários disponíveis.');
-          setLoading(false);
-        });
+      fetchAvailableTimes();
     }
   }, [step, selectedService, selectedBarber, selectedDate]);
 
@@ -121,7 +136,7 @@ export default function Chatbot () {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
+    if (input.trim()) { 
       setName(input.trim());
       setInput('');
       setStep('service');
