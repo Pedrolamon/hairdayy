@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  BARBER
+  CLIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  ATTENDED
+  NO_SHOW
+  CANCELLED
+}
+
+enum ReminderChannel {
+  NONE
+  EMAIL
+  WHATSAPP
+  BOTH
+}
+
+model Service {
+  id           String               @id @default(uuid())
+  name         String               @unique
+  description  String?
+  price        Float
+  duration     Int
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  appointments AppointmentService[]
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  name               String
+  email              String          @unique
+  password           String
+  role               UserRole        @default(CLIENT)
+  phone              String?
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  barber             Barber?
+  clientAppointments Appointment[]   @relation("ClientAppointments")
+  reminderChannel    ReminderChannel @default(BOTH)
+}
+
+model Barber {
+  id           String              @id @default(uuid())
+  commission   Float?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+  availability AvailabilityBlock[]
+}
+
+model FinancialRecord {
+  id            String       @id @default(uuid())
+  type          String
+  amount        Decimal      @db.Decimal(10, 2)
+  description   String?
+  date          DateTime     @db.Date
+  category      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+}
+
+model AvailabilityBlock {
+  id        String   @id @default(uuid())
+  date      DateTime
+  startTime String
+  endTime   String
+  reason    String?
+  barberId  String
+  barber    Barber   @relation(fields: [barberId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id       String        @id @default(uuid())
+  name     String
+  price    Float
+  stock    Int
+  category String?
+  active   Boolean       @default(true)
+  sales    SaleProduct[]
+}
+
+model Sale {
+  id         String        @id @default(uuid())
+  date       DateTime      @default(now())
+  total      Float
+  clientName String?
+  quantities Json
+  products   SaleProduct[]
+}
+
+model Appointment {
+  id              String               @id @default(uuid())
+  date            DateTime             @db.Date
+  startTime       String
+  endTime         String
+  status          AppointmentStatus    @default(SCHEDULED)
+  reminderSent    Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  clientId        String
+  barberId        String
+  barber          Barber               @relation(fields: [barberId], references: [id])
+  client          User                 @relation("ClientAppointments", fields: [clientId], references: [id])
+  services        AppointmentService[]
+  financialRecord FinancialRecord?
+}
+
+model AppointmentService {
+  appointmentId String
+  serviceId     String
+  assignedAt    DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  service       Service     @relation(fields: [serviceId], references: [id])
+
+  @@id([appointmentId, serviceId])
+}
+
+model SaleProduct {
+  saleId    String
+  productId String
+  quantity  Int?
+  product   Product @relation(fields: [productId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id])
+
+  @@id([saleId, productId])
+}
+
+model Notification {
+  id     String   @id @default(uuid())
+  userId String
+  title  String
+  body   String
+  date   DateTime @default(now())
+  read   Boolean  @default(false)
+}
