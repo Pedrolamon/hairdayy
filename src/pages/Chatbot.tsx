@@ -21,20 +21,15 @@ interface Barber {
   user: { name: string };
 }
 
-interface Slot {
-  date: string; // YYYY-MM-DD
-  times: string[]; // ['09:00', '09:30', ...]
-}
 
 export default function Chatbot () {
   const [step, setStep] = useState<'greeting' | 'reminder' | 'service' | 'barber' | 'date' | 'time' | 'confirm' | 'success'>('greeting');
   const [name, setName] = useState('');
-  const [input, setInput] = useState('');
+  const [phone, setPhone] = useState('')
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
-  const [slots, setSlots] = useState<Slot[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -43,10 +38,6 @@ export default function Chatbot () {
   const [appointmentDetails, setAppointmentDetails] = useState<any>(null);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [cancelMsg, setCancelMsg] = useState('');
-  const [isRescheduling, setIsRescheduling] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState('');
-  const [rescheduleTime, setRescheduleTime] = useState('');
-  const [rescheduleTimes, setRescheduleTimes] = useState<string[]>([]);
   const [reminderChannel, setReminderChannel] = useState<'email' | 'whatsapp' | 'both' | 'none'>('email');
 
 
@@ -66,8 +57,12 @@ export default function Chatbot () {
   async function fetchBarbers() {
     setLoading(true);
     try {
-      const { data: apiBarbers } = await api.get("/barbers")
-      setBarbers(apiBarbers)
+      const { data: apiBarbers } = await api.get("/barberss")
+      const normalizedBarbers = apiBarbers.map((barber: any) => ({
+      ...barber,
+      name: barber.name || barber.user?.name || 'Barbeiro sem nome'
+    }));
+    setBarbers(normalizedBarbers);
     } catch (error) {
       console.log(error)
       setError('Erro ao buscar barbeiros.')
@@ -81,7 +76,7 @@ export default function Chatbot () {
     setAvailableTimes([]);
     setError('');
     try {
-      const { data: apiTimes } = await api.get('/appointments/available', {
+      const { data: apiTimes } = await api.get('/chatbot/open', {
         params: {
           serviceId: selectedService?.id,
           barberId: selectedBarber?.id,
@@ -108,40 +103,14 @@ export default function Chatbot () {
     }
   }, [step, selectedService, selectedBarber, selectedDate]);
 
-  useEffect(() => {
-    console.log('useEffect reagendamento', { isRescheduling, rescheduleDate, appointmentDetails });
-    if (
-      isRescheduling &&
-      rescheduleDate &&
-      appointmentDetails?.services?.[0] &&
-      appointmentDetails?.barber
-    ) {
-      (async () => {
-        setLoading(true);
-        try {
-          console.log('Chamando fetch de horários para reagendamento:', rescheduleDate, appointmentDetails.services[0].id, appointmentDetails.barber.id);
-          const res = await fetch(`/appointments/available?serviceId=${appointmentDetails.services[0].id}&barberId=${appointmentDetails.barber.id}&date=${rescheduleDate}`);
-          const times = await res.json();
-          console.log('Horários recebidos para reagendamento:', times);
-          setRescheduleTimes(times);
-          console.log('rescheduleTimes após fetch:', times);
-        } catch {
-          setError('Erro ao buscar horários para reagendamento.');
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
-  }, [isRescheduling, rescheduleDate, appointmentDetails]);
+  
 
   const handleNameSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (input.trim()) { 
-      setName(input.trim());
-      setInput('');
-      setStep('service');
-    }
-  };
+  e.preventDefault();
+  if (name.trim() && phone.trim()) {
+    setStep("service");
+  }
+};
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);
@@ -161,37 +130,36 @@ export default function Chatbot () {
     setSelectedTime(time);
     setStep('confirm');
   };
-
+  const [serviceToken, setServiceToken] = useState<string | null>(null);
+  
   const handleConfirm = async () => {
     setLoading(true);
     setError('');
     try {
-      // Calcular endTime com base na duração do serviço
       const [hour, minute] = selectedTime.split(':').map(Number);
       const duration = selectedService?.duration || 30;
       const startDate = new Date(`${selectedDate}T${selectedTime}`);
       const endDate = new Date(startDate.getTime() + duration * 60000);
       const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-      const res = await fetch('/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+     
+      const res = await api.post('/chatbot', {
           date: selectedDate,
           startTime: selectedTime,
           endTime,
           serviceIds: [selectedService?.id],
           barberId: selectedBarber?.id,
           reminderChannel,
-        }),
-      });
-      if (!res.ok) throw new Error('Erro ao agendar.');
-      const data = await res.json();
+          clientName: name, 
+          phone: phone,
+        });
+      const data = res.data;
       console.log('handleConfirm: data do POST', data);
-      // Buscar detalhes reais do agendamento
-      const detailsRes = await fetch(`/appointments/${data.id}`, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const details = await detailsRes.json();
+      setAppointmentDetails(data);
+      setServiceToken(data.serviceToken); 
+      setSuccessMsg('Agendamento realizado com sucesso!');
+      setStep('success')
+      const detailsRes = await api.get(`/chatbot/${data.id}`);
+      const details = await detailsRes.data
       setAppointmentDetails(Array.isArray(details) ? null : details);
       console.log('setAppointmentDetails (detalhes):', details, Array.isArray(details));
       setSuccessMsg('Agendamento realizado com sucesso!');
@@ -202,83 +170,32 @@ export default function Chatbot () {
       setLoading(false);
     }
   };
-
-  const handleCancel = async () => {
-    if (!appointmentDetails?.id) return;
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch(`/appointments/${appointmentDetails.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cancelled' }),
-      });
-      if (!res.ok) throw new Error('Erro ao cancelar.');
-      setCancelMsg('Agendamento cancelado com sucesso.');
-    } catch (err) {
-      setError('Erro ao cancelar agendamento.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartReschedule = () => {
-    setIsRescheduling(true);
-    setRescheduleDate('');
-    setRescheduleTime('');
-    setRescheduleTimes([]);
-  };
-
-  const handleRescheduleDate = (date: string) => {
-    console.log('handleRescheduleDate chamada com:', date);
-    setRescheduleDate(date);
-    setRescheduleTime('');
-    setRescheduleTimes([]);
-  };
-
-  const handleRescheduleConfirm = async () => {
-    if (!appointmentDetails?.id || !rescheduleDate || !rescheduleTime) return;
-    setLoading(true);
-    setError('');
-    try {
-      // Calcular endTime com base na duração do serviço
-      const duration = appointmentDetails.services?.[0]?.duration || 30;
-      const startDate = new Date(`${rescheduleDate}T${rescheduleTime}`);
-      const endDate = new Date(startDate.getTime() + duration * 60000);
-      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
-      const res = await fetch(`/appointments/${appointmentDetails.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: rescheduleDate, startTime: rescheduleTime, endTime }),
-      });
-      if (!res.ok) throw new Error('Erro ao reagendar.');
-      const updated = await res.json();
-      setAppointmentDetails(Array.isArray(updated) ? null : updated);
-      console.log('setAppointmentDetails (updated):', updated, Array.isArray(updated));
-      setIsRescheduling(false);
-      setSuccessMsg('Agendamento remarcado com sucesso!');
-    } catch (err) {
-      setError('Erro ao remarcar agendamento.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   return (
-<div className="min-h-screen flex items-center justify-center bg-[#36454F]">
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6 text-[#B87333]">Assistente Virtual</h2>
-
+<div className="h-screen w-screen flex items-center justify-center bg-[#36454F] relative flex-col">
+   <a href="/clientAppointments" className='p-2 bg-[#B87333] text-white rounded-lg absolute top-4 right-4 hover:bg-[#d88f4c]'>Meus agendamentos</a>
+    <div className=" w-full max-w-[180vh] "> 
+      <h2 className="text-3xl font-bold mb-6 text-[#B87333]">Assistente Virtual</h2>
+    
       {step === 'greeting' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3 min-w-50">{getGreeting()}! Sou o assistente virtual do <span className="font-semibold">Aparato</span>. Qual o seu nome, por favor?</div>
+          <div className="bg-[#4a5568] text-gray-200 text-lg rounded-lg p-5 min-w-50">{getGreeting()}! Sou o assistente virtual do <span className="font-semibold">Aparato</span>. Qual o seu nome, por favor?</div>
           <form onSubmit={handleNameSubmit} className="flex gap-2 mt-4">
             <input
-              className="border border-[#B87333] bg-gray-700 text-white rounded-full px-4 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
+              className="border border-[#B87333] bg-gray-700 text-white rounded-full px-5 py-3 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
               placeholder="Digite seu nome..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
+              value={name}
+              onChange={e => setName(e.target.value)}
               autoFocus
+              required
+            />
+              <input
+              className="border border-[#B87333] bg-gray-700 text-white rounded-full px-4 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
+              placeholder="Digite seu Número..."
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              autoFocus
+              required
             />
             <button type="submit" className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200">Enviar</button>
           </form>
@@ -331,7 +248,7 @@ export default function Chatbot () {
 
       {step === 'barber' && selectedService && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Deseja escolher um barbeiro específico?</div>
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha um barbeiro</div>
           {loading && <div className="text-gray-400 mt-2">Carregando barbeiros...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           <div className="flex flex-wrap gap-2 mt-4">
@@ -345,12 +262,6 @@ export default function Chatbot () {
               </button>
             ))}
           </div>
-          <button
-            className="w-full border border-gray-500 rounded-full p-3 bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors duration-200"
-            onClick={() => handleBarberSelect(null)}
-          >
-            Não tenho preferência
-          </button>
         </div>
       )}
 
@@ -437,60 +348,10 @@ export default function Chatbot () {
           </ul>
           <div className="text-gray-400 mb-4 text-sm">Você receberá um lembrete próximo ao horário do seu agendamento.</div>
           {cancelMsg && <div className="text-red-400 font-bold mt-2">{cancelMsg}</div>}
-          <div className="flex gap-2 mt-4">
-            <button className="bg-yellow-600 text-gray-800 px-4 py-2 rounded-full font-bold shadow-md hover:bg-yellow-500 transition-colors duration-200" onClick={handleStartReschedule}>
-              Reagendar
-            </button>
-            <button className="bg-red-600 text-white px-4 py-2 rounded-full font-bold shadow-md hover:bg-red-500 transition-colors duration-200" onClick={handleCancel}>
-              Cancelar
-            </button>
-          </div>
-          {isRescheduling && (
-            <div className="mt-4 space-y-4">
-              <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha uma nova data:</div>
-              <input
-                type="date"
-                className="border border-[#B87333] bg-gray-700 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
-                value={rescheduleDate}
-                onChange={e => handleRescheduleDate(e.target.value)}
-                onBlur={e => handleRescheduleDate(e.target.value)}
-                aria-label="Escolha uma nova data"
-              />
-              {rescheduleTimes.length > 0 && (
-                <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Horários disponíveis:</div>
-              )}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {rescheduleTimes.map(time => (
-                  <button
-                    key={time}
-                    className={`rounded-full px-4 py-2 ${rescheduleTime === time ? 'bg-[#B87333] text-gray-800 font-bold shadow-md' : 'bg-gray-700 text-gray-200 hover:bg-gray-600'}`}
-                    onClick={() => setRescheduleTime(time)}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className="bg-green-600 text-white px-6 py-2 rounded-full font-bold shadow-md hover:bg-green-500 transition-colors duration-200"
-                  onClick={handleRescheduleConfirm}
-                  disabled={loading || !rescheduleDate || !rescheduleTime}
-                >
-                  {loading ? 'Reagendando...' : 'Confirmar novo horário'}
-                </button>
-                <button
-                  className="ml-2 text-gray-400 hover:text-gray-200 transition-colors duration-200"
-                  onClick={() => setIsRescheduling(false)}
-                  disabled={loading}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  </div>
+</div>
+)}
+{/* Aqui é onde a correção é feita. A próxima div fecha a main do componente. */}
+</div>
+</div>
 );
 }

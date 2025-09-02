@@ -5,7 +5,6 @@ import { Prisma } from '@prisma/client';
 
 const router = Router();
 
-// Função auxiliar para obter e processar dados do relatório financeiro
 async function getFinancialReportData(query: Request['query']) {
   const { startDate, endDate, type, category, barberId } = query;
   const where: Prisma.FinancialRecordWhereInput = {};
@@ -29,7 +28,6 @@ async function getFinancialReportData(query: Request['query']) {
     },
   });
 
-  // Convertendo a propriedade 'amount' de Prisma.Decimal para Number
   const formattedRecords = records.map(record => ({
     ...record,
     amount: record.amount.toNumber(),
@@ -77,7 +75,7 @@ router.get("/report", authenticateJWT, async (req: AuthRequest, res: Response) =
 });
 
 
-// Rotas de CRUD
+
 router.get("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
     const records = await prisma.financialRecord.findMany({

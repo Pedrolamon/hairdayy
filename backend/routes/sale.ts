@@ -30,7 +30,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 
 // Registrar venda
 router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
-  const { clientName, products, quantities, total } = req.body;
+  const { clientName, products, quantities,sellingPrice, total } = req.body;
 
   try {
     const newSale = await prisma.$transaction(async (tx) => {
@@ -42,7 +42,7 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
         },
       });
 
-      // Mapear produtos para um objeto de fácil acesso
+      
       const productMap = new Map(productEntities.map((p: Product) => [p.id, p]));
 
       for (const productId of productIds) {
@@ -60,7 +60,6 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
         });
       }
 
-      // Criar a venda e a tabela de união (SaleProduct)
       const sale = await tx.sale.create({
         data: {
           clientName,

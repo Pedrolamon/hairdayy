@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom'; // Importe o Outlet para renderizar as rotas filhas
+import { Outlet } from 'react-router-dom'; 
 import { Layout } from '../components/ui/sidebar.tsx';
 
 const BarberRoutesWithLayout = () => {

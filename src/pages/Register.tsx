@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 //components
 import { IndexHeader } from '../components/indexHeader';
 
-// Importações de componentes Shadcn/ui
+// Shadcn/ui
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -25,21 +26,19 @@ interface RegisterFormData {
 
 export default function Register() 
  {
-  // Estado para os valores de entrada do formulário
   const [formData, setFormData] = useState<RegisterFormData>({
     name: '',
     email: '',
     password: '',
-    role: 'barber',
+    role: '',
     phone: '',
   });
 
-  // Estado para mensagens (sucesso ou erro)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  // Estado para o indicador de carregamento
   const [loading, setLoading] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  // Manipula as mudanças de entrada e atualiza o estado
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -61,9 +60,12 @@ export default function Register()
           name: '',
           email: '',
           password: '',
-          role: 'barber',
+          role: '',
           phone: '',
         });
+        setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
     } catch (error) {
       console.error('Erro durante o cadastro:', error);
       setMessage({ type: 'error', text: 'Erro de rede ou servidor indisponível. Tente novamente mais tarde.' });
@@ -88,7 +90,6 @@ export default function Register()
                   </p>
                 </div>
                 
-                {/* Exibe as mensagens de sucesso ou erro */}
                 {message && (
                   <div
                     className={cn(
@@ -111,7 +112,7 @@ export default function Register()
                   />
                 </div>
 
-                {/* Email Input */}
+
                 <div className="grid gap-3">
                   <Label htmlFor="email">E-mail</Label>
                   <Input
@@ -124,7 +125,6 @@ export default function Register()
                   />
                 </div>
 
-                {/* Password Input */}
                 <div className="grid gap-3">
                   <Label htmlFor="password">Senha</Label>
                   <Input
@@ -137,7 +137,6 @@ export default function Register()
                   />
                 </div>
 
-                {/* Role Select */}
                 <div className="grid gap-3">
                   <Label htmlFor="role">Função</Label>
                   <select
@@ -149,10 +148,10 @@ export default function Register()
                   >
                     <option value="barber">Barbeiro</option>
                     <option value="client">Cliente</option>
+                    <option value="ADMIN">Administrador</option>
                   </select>
                 </div>
 
-                {/* Phone Input */}
                 <div className="grid gap-3">
                   <Label htmlFor="phone">Telefone</Label>
                   <Input
@@ -164,7 +163,6 @@ export default function Register()
                   />
                 </div>
 
-                {/* Submit Button */}
                 <Button
                   type="submit"
                   className="w-full"

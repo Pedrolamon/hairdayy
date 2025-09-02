@@ -24,7 +24,6 @@ router.post("/register", async (req: Request, res: Response) => {
 
     const hashed = await bcrypt.hash(password, 10);
     
-    // Convertemos a string do role para maiúsculas para que corresponda ao enum do Prisma
     const roleValue = role ? (role.toUpperCase() as UserRole) : UserRole.BARBER;
 
     const user = await prisma.user.create({
@@ -77,6 +76,7 @@ router.post("/login", async (req: Request, res: Response) => {
   return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
+//rota para buscar suas proprias informações 
 router.get("/me", authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.userId || typeof req.userId !== 'string') {
@@ -102,6 +102,7 @@ router.get("/me", authenticateJWT, async (req: AuthRequest, res: Response) => {
   }
 });
 
+//rota para logout
 router.post("/logout", authenticateJWT, (req: AuthRequest, res: Response) => {
   return res.status(200).json({ message: "Logout bem-sucedido." });
 });

@@ -6,7 +6,7 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 
 // Listar todos os serviços
-router.get('/', authenticateJWT, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const services = await prisma.service.findMany();
     res.json(services);

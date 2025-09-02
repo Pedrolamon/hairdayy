@@ -12,6 +12,7 @@ import {
   Search,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import FinancialCalendar from './Fpage';
 
 interface Report {
   totalReceitas: number;
@@ -28,7 +29,7 @@ interface Report {
   }>;
 }
 
-// Componente de Spinner customizado para remover dependências externas
+
 const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?: string }) => (
   <div
     style={{ width: size, height: size, borderTopColor: color }}
@@ -38,7 +39,7 @@ const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?
 
 export default function Financial () {
 
-  // Estados da aplicação
+
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
@@ -53,33 +54,49 @@ export default function Financial () {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [allCategories, setAllCategories] = useState(new Set<string>())
+  
   const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // Exibe uma mensagem temporária
+
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 5000); // Esconde a mensagem após 5 segundos
+    setTimeout(() => setMessage({ text: '', type: '' }), 5000); 
   };
 
-  // Efeito para focar no campo de valor quando em modo de edição
+  
   useEffect(() => {
     if (editingId && amountInputRef.current) {
       amountInputRef.current.focus();
     }
   }, [editingId]);
 
-  // Efeito para buscar o relatório quando as datas mudam
+ 
   useEffect(() => {
     fetchReport();
-  }, [ startDate, endDate]);
+  }, [ startDate, endDate,categoryFilter]);
+  
 
-  // Função para buscar o relatório financeiro
+  useEffect(() => {
+    if (report && report.registros) {
+        const categories = new Set<string>();
+        report.registros.forEach(r => {
+            if (r.category) {
+                categories.add(r.category);
+            }
+        });
+        setAllCategories(categories);
+    }
+}, [report]);
+
+
   const fetchReport = async () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
+    if (categoryFilter) params.append('category', categoryFilter);
 
     const url = `/financial/report?${params.toString()}`;
 
@@ -94,12 +111,10 @@ export default function Financial () {
     }
   };
 
-  // Lidar com a mudança nos campos do formulário
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Preencher o formulário para edição
   const handleEdit = (r: Report['registros'][0]) => {
     setForm({
       type: r.type,
@@ -111,11 +126,10 @@ export default function Financial () {
     setEditingId(r.id);
   };
 
-  // Deletar um registro
+
   const handleDelete = async (id: number) => {
-    // Substituindo window.confirm por um feedback visual
     if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
-    setLoading(true); // Indica que algo está sendo processado
+    setLoading(true); 
     try {
       await api.delete(`/financial/${id}`,); 
       showMessage('Registro removido com sucesso!', 'success');
@@ -127,7 +141,6 @@ export default function Financial () {
     }
   };
 
-  // Submeter o formulário (criar ou atualizar)
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
@@ -167,7 +180,7 @@ export default function Financial () {
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
       <div className="max-w-7xl mx-auto">
-        {/* Mensagens de feedback (toast) */}
+
         {message.text && (
           <div
             className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up ${
@@ -185,7 +198,6 @@ export default function Financial () {
             Gerenciar Finanças
           </h2>
 
-          {/* Formulário de Lançamento */}
           <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mb-6">
             <div className="flex flex-col">
               <label htmlFor="type" className="text-sm text-gray-600 mb-1">
@@ -293,13 +305,26 @@ export default function Financial () {
             </div>
           </form>
 
-          {/* Filtro de datas */}
           <div className="bg-gray-50 rounded-lg p-4 mb-8 flex flex-col md:flex-row items-center gap-4 border border-gray-200">
             <h4 className="font-semibold text-sm text-gray-600 flex items-center gap-2">
               <Search className="w-4 h-4" />
               Filtrar por data:
             </h4>
             <div className="flex items-center gap-2">
+             
+            <label htmlFor="categoryFilter" className="sr-only">Filtrar por Categoria</label>
+            <select
+              id="categoryFilter"
+              className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">Todas as Categorias</option>
+              {Array.from(allCategories).map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+
               <label htmlFor="startDate" className="sr-only">Data de Início</label>
               <input
                 id="startDate"
@@ -318,7 +343,8 @@ export default function Financial () {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
-            {(startDate || endDate) && (
+            
+            {(startDate || endDate || categoryFilter) && (
               <button
                 className="text-sm text-gray-500 hover:text-blue-600 transition"
                 onClick={() => {
@@ -332,7 +358,6 @@ export default function Financial () {
           </div>
         </div>
 
-        {/* Relatório Financeiro */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-2xl font-bold mb-6 text-gray-900">Relatório</h3>
 
@@ -342,7 +367,6 @@ export default function Financial () {
             </div>
           ) : report ? (
             <>
-              {/* Cards de resumo */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div className="bg-green-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
                   <TrendingUp className="w-10 h-10 text-green-600" />
@@ -367,7 +391,6 @@ export default function Financial () {
                 </div>
               </div>
 
-              {/* Tabela de Registros */}
               <h4 className="text-xl font-bold mb-4 text-gray-900">Registros Detalhados</h4>
               <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -437,6 +460,7 @@ export default function Financial () {
           )}
         </div>
       </div>
+      <FinancialCalendar/>
     </div>
   );
 };

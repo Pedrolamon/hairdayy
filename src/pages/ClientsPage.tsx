@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
+import { Ban, Save } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -7,6 +8,7 @@ interface Client {
   email: string;
   phone?: string;
   notes?: string;
+  isBlocked?: boolean;
 }
 
 interface Appointment {
@@ -18,7 +20,7 @@ interface Appointment {
   services: { name: string }[];
 }
 
-export default function Clients () {
+export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,6 +29,7 @@ export default function Clients () {
   const [notes, setNotes] = useState('');
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesSuccess, setNotesSuccess] = useState('');
+  const [isBlocking, setIsBlocking] = useState(false);
   const notesInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -42,34 +45,35 @@ export default function Clients () {
   const fetchClients = async () => {
     setLoading(true);
     setError('');
-   try {
-    const { data } = await api.get<Client[]>('/clients');
-    setClients(data);
-  } catch {
-    setError('Erro ao buscar clientes.');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      const { data } = await api.get<Client[]>('/Clients');
+      setClients(data);
+    } catch {
+      setError('Erro ao buscar clientes.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchDetails = async (client: Client) => {
     setSelected(client);
     setNotes(client.notes || '');
     setLoading(true);
     try {
-    const { data } = await api.get(`/clients/${client.id}`);
-    setAppointments(data.appointments || []);
-  } catch {
-    setError('Erro ao buscar histórico.');
-  } finally {
-    setLoading(false);
-  }
-};
+      const { data } = await api.get(`/Clients/${client.id}`);
+      setAppointments(data.appointments || []);
+    } catch {
+      setError('Erro ao buscar histórico.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveNotes = async () => {
     setNotesLoading(true);
     setNotesSuccess('');
     try {
-      await api.put(`/clients/${selected?.id}/notes`, { notes });
+      await api.put(`/Clients/${selected?.id}/notes`, { notes });
       setNotesSuccess('Notas salvas!');
       fetchClients();
     } catch {
@@ -79,53 +83,168 @@ export default function Clients () {
     }
   };
 
+  const handleBlockClient = async () => {
+    if (!selected) return;
+
+    setIsBlocking(true);
+    try {
+      await api.put(`/Clients/${selected.id}/block`);
+      setSelected({ ...selected, isBlocked: !selected.isBlocked });
+      fetchClients();
+    } catch {
+      setError(`Erro ao ${selected.isBlocked ? 'desbloquear' : 'bloquear'} o cliente.`);
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
+  const totalClients = clients.length;
+  const blockedClients = clients.filter(c => c.isBlocked).length;
+
   return (
-    <div>
-      <h3 className="text-lg font-bold mb-4">Clientes</h3>
-      {loading && <div className="text-gray-500">Carregando...</div>}
-      {error && <div className="text-red-500">{error}</div>}
+    <div className="p-6 bg-gray-100 min-h-screen dark:bg-gray-900">
+      <h3 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
+        Gerenciamento de Clientes
+      </h3>
+
+      <div className="flex gap-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex-1">
+          <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+            Total de Clientes
+          </div>
+          <div className="text-2xl font-bold text-blue-600">{totalClients}</div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex-1">
+          <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+            Clientes Bloqueados
+          </div>
+          <div className="text-2xl font-bold text-red-600">{blockedClients}</div>
+        </div>
+      </div>
+
+      {loading && <div className="text-gray-500 dark:text-gray-400">Carregando...</div>}
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
+      
       {!selected ? (
-        <ul className="divide-y">
-          {clients.map(client => (
-            <li key={client.id} className="py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div>
-                <span className="font-semibold">{client.name}</span>
-                <span className="ml-2 text-gray-500">{client.email}</span>
-                {client.phone && <span className="ml-2 text-gray-500">{client.phone}</span>}
-              </div>
-              <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm" onClick={() => fetchDetails(client)}>
-                Ver detalhes
-              </button>
-            </li>
-          ))}
-          {clients.length === 0 && !loading && <li className="text-gray-500">Nenhum cliente encontrado.</li>}
-        </ul>
-      ) : (
-        <div className="bg-gray-50 rounded p-4 mb-4">
-          <button className="text-sm text-gray-500 hover:underline mb-2" onClick={() => setSelected(null)}>&larr; Voltar</button>
-          <div className="mb-2 font-semibold">{selected.name} ({selected.email})</div>
-          <div className="mb-2">Telefone: {selected.phone || '-'}</div>
-          <div className="mb-2">Notas:</div>
-          <textarea ref={notesInputRef} className="border rounded px-2 py-1 w-full mb-2" value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
-          <button className="bg-green-600 text-white px-3 py-1 rounded text-sm flex items-center gap-1" onClick={handleSaveNotes} disabled={notesLoading}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            {notesLoading ? 'Salvando...' : 'Salvar notas'}
-          </button>
-          {notesSuccess && <div className="text-green-600 text-sm mt-1">{notesSuccess}</div>}
-          <div className="mt-4 font-semibold">Histórico de agendamentos:</div>
-          <ul className="divide-y">
-            {appointments.map(app => (
-              <li key={app.id} className="py-2">
-                <span className="font-semibold">{new Date(app.date).toLocaleDateString()} {app.startTime}</span>
-                <span className="ml-2 text-gray-500">({app.status})</span>
-                <span className="ml-2">{app.services.map(s => s.name).join(', ')}</span>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {clients.map(client => (
+              <li key={client.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-100">
+                    {client.name}
+                    {client.isBlocked && (
+                      <span className="ml-2 text-red-500 font-normal text-sm">
+                        (Bloqueado)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {client.email} {client.phone && `| ${client.phone}`}
+                  </div>
+                </div>
+                <button
+                  className="mt-2 md:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+                  onClick={() => fetchDetails(client)}
+                >
+                  Ver detalhes
+                </button>
               </li>
             ))}
-            {appointments.length === 0 && <li className="text-gray-500">Nenhum agendamento encontrado.</li>}
+            {clients.length === 0 && !loading && <li className="p-4 text-center text-gray-500 dark:text-gray-400">Nenhum cliente encontrado.</li>}
           </ul>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <button
+              className="text-sm text-gray-500 dark:text-gray-400 hover:underline flex items-center gap-1"
+              onClick={() => setSelected(null)}
+            >
+              &larr; Voltar
+            </button>
+            <button
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition ${
+                selected.isBlocked ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+              onClick={handleBlockClient}
+              disabled={isBlocking}
+            >
+              {isBlocking ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  {selected.isBlocked ? 'Desbloqueando...' : 'Bloqueando...'}
+                </>
+              ) : (
+                <>
+                  <Ban className="h-4 w-4" />
+                  {selected.isBlocked ? 'Desbloquear Cliente' : 'Bloquear Cliente'}
+                </>
+              )}
+            </button>
+          </div>
+          
+          <div className="mb-4">
+            <div className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              {selected.name}
+            </div>
+            <div className="text-gray-500 dark:text-gray-400">
+              {selected.email} {selected.phone && `| ${selected.phone}`}
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas do Cliente</h4>
+            <div className="relative">
+              <textarea
+                ref={notesInputRef}
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={4}
+              />
+              <button
+                className="absolute bottom-3 right-3 bg-green-600 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1 hover:bg-green-700 transition"
+                onClick={handleSaveNotes}
+                disabled={notesLoading}
+              >
+                {notesLoading ? (
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {notesLoading ? 'Salvando...' : 'Salvar'}
+              </button>
+              {notesSuccess && <div className="text-green-600 text-sm mt-1">{notesSuccess}</div>}
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Histórico de Agendamentos</h4>
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+              <ul className="divide-y divide-gray-200 dark:divide-gray-600">
+                {appointments.length > 0 ? (
+                  appointments.map(app => (
+                    <li key={app.id} className="py-2">
+                      <div className="font-semibold text-gray-800 dark:text-gray-100">
+                        {new Date(app.date).toLocaleDateString()} às {app.startTime}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Serviços: {app.services.map(s => s.name).join(', ')}
+                      </div>
+                      <div className={`text-sm font-medium ${app.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                        Status: {app.status === 'confirmed' ? 'Confirmado' : 'Pendente'}
+                      </div>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-center py-4 text-gray-500 dark:text-gray-400">Nenhum agendamento encontrado.</li>
+                )}
+              </ul>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
-

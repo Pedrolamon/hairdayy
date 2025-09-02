@@ -11,6 +11,10 @@ import saleRoutes from "./routes/sale";
 import notificationRoutes from "./routes/notification";
 import dashboardRoutes from "./routes/dashboard";
 import availabilityRouter from "./routes/Availability";
+import adminRoutes from "./routes/admin"
+import barberRouter from "./routes/barbers"
+import chatbot from "./routes/chatbot"
+
 
 dotenv.config();
 
@@ -32,6 +36,12 @@ app.use("/api/sales", saleRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/availability", availabilityRouter)
+app.use("/api/admin", adminRoutes)
+app.use("/api/barberss", barberRouter)
+app.use("/api/chatbot", chatbot)
+
+
+
 
 // Rota de teste
 app.get("/", (req, res) => {

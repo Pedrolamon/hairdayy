@@ -24,11 +24,11 @@ import {
   CheckCircle,
   X,
   RefreshCcw,
+  Plus,
 } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement, ArcElement);
 
-// Componente de Spinner customizado
 const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?: string }) => (
   <div
     style={{ width: size, height: size, borderTopColor: color }}
@@ -46,7 +46,7 @@ export default function Dashboard () {
 
   const { isAuth, isLoading } = useAuth();
 
-  // Exibe uma mensagem temporária
+
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000); 
@@ -78,12 +78,10 @@ export default function Dashboard () {
   };
 
 
-  // Efeito para buscar os dados do dashboard
   useEffect(() => {
     fetchDashboard();
   }, [filters, isAuth, isLoading]);
 
-  // Seção de Loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
@@ -110,7 +108,7 @@ export default function Dashboard () {
     );
   }
 
-  // Seção de Erro
+
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8">
@@ -127,7 +125,7 @@ export default function Dashboard () {
     );
   }
 
-  // Dados para gráficos
+
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -146,7 +144,7 @@ export default function Dashboard () {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
-      {/* Mensagens de feedback (toast) */}
+
       {message.text && (
         <div
           className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up ${
@@ -161,7 +159,7 @@ export default function Dashboard () {
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard de Análise</h2>
 
-        {/* Filtros */}
+
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
             <Search className="w-6 h-6 text-gray-500" />
@@ -196,10 +194,17 @@ export default function Dashboard () {
               <RefreshCcw className="w-5 h-5" />
               Limpar Filtros
             </button>
+          
+          <a 
+            href="/Agenda"
+            className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2"
+          >
+            <Plus className="h-5 w-5" /> Novo Agendamento
+          </a>
+
           </div>
         </div>
 
-        {/* Cards de resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-blue-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <CalendarDays className="w-10 h-10" />
@@ -231,7 +236,7 @@ export default function Dashboard () {
           </div>
         </div>
 
-        {/* Seção de Gráficos */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h3 className="text-xl font-bold mb-4 text-gray-800">Agendamentos por Dia</h3>

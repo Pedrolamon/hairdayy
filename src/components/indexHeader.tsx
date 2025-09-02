@@ -18,7 +18,6 @@ export function IndexHeader() {
           <span className="font-bold text-xl text-[#36454F]">Aparato</span>
         </a>
 
-        {/* Menu Desktop */}
         <nav className="hidden md:flex items-center space-x-8">
           <a
             href="#recursos"

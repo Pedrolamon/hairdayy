@@ -1,14 +1,12 @@
 import { Router, Request, Response } from 'express';
 import webpush from 'web-push';
-import prisma from '../prisma'; // Seu Prisma Client
+import prisma from '../prisma'; 
 import { authenticateJWT } from '../middleware/auth';
-import { PrismaClient } from '@prisma/client'; // Tipos para a transação
+import { PrismaClient } from '@prisma/client'; 
 
-// Simples armazenamento em memória (substitua por banco em produção)
-// O ID do usuário é agora uma string (UUID)
+
 const pushSubscriptions: { [userId: string]: any } = {};
 
-// Chaves VAPID de exemplo (gere suas próprias em produção)
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
@@ -60,7 +58,7 @@ router.post('/send', authenticateJWT, async (req: Request & { userId?: string },
   }
 });
 
-// Endpoint para obter a chave pública VAPID
+//obter a chave pública VAPID
 router.get('/vapid-public-key', (_req, res) => {
   if (!vapidPublicKey) {
     return res.status(500).json({ error: 'Chave pública VAPID não configurada.' });
@@ -68,7 +66,7 @@ router.get('/vapid-public-key', (_req, res) => {
   res.send(vapidPublicKey);
 });
 
-// Endpoint para listar notificações do usuário
+// listar notificações do usuário
 router.get('/history', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
   try {
@@ -82,7 +80,7 @@ router.get('/history', authenticateJWT, async (req: Request & { userId?: string 
   }
 });
 
-// Endpoint para marcar notificação como lida
+//marcar notificação como lida
 router.put('/history/:id/read', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
   const { id } = req.params;
@@ -100,7 +98,7 @@ router.put('/history/:id/read', authenticateJWT, async (req: Request & { userId?
   }
 });
 
-// Endpoint para excluir notificação
+//excluir notificação
 router.delete('/history/:id', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
   const { id } = req.params;
@@ -117,7 +115,7 @@ router.delete('/history/:id', authenticateJWT, async (req: Request & { userId?: 
   }
 });
 
-// Endpoint para marcar todas como lidas
+// marca todas como lidas
 router.put('/history/mark-all-read', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
   try {
@@ -131,7 +129,7 @@ router.put('/history/mark-all-read', authenticateJWT, async (req: Request & { us
   }
 });
 
-// Endpoint para excluir todas as notificações
+// excluir todas as notificações
 router.delete('/history/delete-all', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
   if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
   try {

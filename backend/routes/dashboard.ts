@@ -22,7 +22,6 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
     const { start, end, barberId } = req.query;
 
-    // Datas com validação e limites do dia
     const endParam = parseISODate(end) ?? new Date();
     const now = endOfDay(endParam);
 
@@ -31,11 +30,10 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       startParam ?? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
     );
 
-    // Filtro do barbeiro (ignora vazio)
+   
     const barberFilter =
       isNonEmpty(String(barberId ?? '')) ? { barberId: String(barberId) } : {};
 
-    // ---------- Queries ----------
     const appointments = await prisma.appointment.findMany({
       where: {
         date: { gte: startDate, lte: now },
@@ -63,7 +61,6 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       },
     });
 
-    // ---------- Agregações ----------
     type AppointmentWithRelations = (typeof appointments)[number] & {
       barber?: { user?: { name?: string | null } | null } | null;
     };
@@ -74,7 +71,6 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
     const totalSales = sales.length;
 
     const totalProductsSold = sales.reduce((sum: number, s: SaleWithRelations) => {
-      // quantities pode ser JSON, objeto, null...
       const raw = (s as any).quantities;
       const obj =
         raw == null
@@ -131,7 +127,6 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       salesByDay[key] = (salesByDay[key] || 0) + 1;
     });
 
-    // ---------- Resposta ----------
     res.json({
       totalAppointments,
       totalSales,

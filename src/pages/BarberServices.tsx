@@ -9,7 +9,6 @@ interface Service {
   price: number;
 }
 
-// Componente de Spinner customizado para botões
 const ButtonSpinner = () => (
   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -138,7 +137,6 @@ export default function Services ()  {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
-      {/* Mensagens de feedback (toast) */}
       {message.text && (
         <div
           className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up transition-all duration-300 ${
@@ -150,7 +148,6 @@ export default function Services ()  {
         </div>
       )}
 
-      {/* Modal de Confirmação de Exclusão */}
       {isDeleteModalOpen && serviceToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md">
@@ -179,7 +176,6 @@ export default function Services ()  {
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Gerenciar Serviços</h2>
 
-        {/* Formulário de Adição/Edição */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
             {editing ? <Pencil className="w-6 h-6 text-yellow-500" /> : <PlusCircle className="w-6 h-6 text-blue-500" />}
@@ -249,7 +245,6 @@ export default function Services ()  {
           </form>
         </div>
 
-        {/* Lista de Serviços */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-xl font-bold mb-4 text-gray-800">Serviços Cadastrados</h3>
           {loading && <div className="text-center text-gray-500 py-8">Carregando serviços...</div>}

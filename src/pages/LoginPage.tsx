@@ -13,6 +13,8 @@ import { Label } from "../components/ui/label";
 import { cn } from "../lib/utils";
 import { useAuth } from '../hooks/use-auth';
 
+import { useNavigate } from "react-router-dom";
+
 interface LoginPageProps {
   className?: string;
 }
@@ -24,6 +26,7 @@ export default function LoginPage({ className }: LoginPageProps) {
   const [error, setError] = useState('');
 
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     // TODO: remove later and add React Hook Form
@@ -34,6 +37,8 @@ export default function LoginPage({ className }: LoginPageProps) {
 
     try {
       await login(email, password)
+
+      navigate("/dashboard")
     } catch (err) {
       // todo
     } finally {
@@ -56,7 +61,6 @@ export default function LoginPage({ className }: LoginPageProps) {
                     Acesse sua conta 
                   </p>
                 </div>
-                {/* Exibe mensagem de erro se houver */}
                 {error && (
                   <div className="text-sm text-center text-red-500">
                     {error}
@@ -142,7 +146,6 @@ export default function LoginPage({ className }: LoginPageProps) {
                 </div>
               </div>
             </form>
-            {/* Seção de boas-vindas para telas maiores */}
             <div className="hidden items-center justify-center md:flex">
               <img src={LogoAparato} alt="imagem da logo da empresa" />
             </div>

@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from "../hooks/use-auth"
 
-// Importar ícones da Lucide React.
-import { Calendar, Trash2, Edit, X, Plus, Clock, Users, Tag, Check, Filter, Bell, AlertCircle } from 'lucide-react';
+import { Calendar, CalendarClock, CalendarDays, BarChart, Trash2, Edit, X, Plus, Clock, Users, Tag, Check, Filter, Bell, AlertCircle } from 'lucide-react';
 
 
 const AppointmentStatus = {
@@ -14,7 +13,6 @@ const AppointmentStatus = {
   NO_SHOW: 'NO_SHOW',
 } as const;
 
-// Tipagem para a entidade de Serviço, definida localmente.
 interface Service {
   id: string;
   name: string;
@@ -22,7 +20,6 @@ interface Service {
   price: number;
 }
 
-// Tipos para o agendamento
 interface Appointment {
   id: string;
   date: string;
@@ -32,66 +29,67 @@ interface Appointment {
   client: { name: string } | null;
   barber: { user: { name: string } | null } | null;
   services: { service: Service }[];
+  clientName: string;
 }
 
-// Tipos para o formulário de novo agendamento
 interface NewAppointmentForm {
   date: string;
   serviceId: string;
   startTime: string;
+  clientName: string;
 }
 
-// Tipos para o formulário de edição de agendamento
 interface EditAppointmentForm {
   date: string;
   startTime: string;
   endTime: string;
+  clientName: string;
   serviceIds: string[];
 }
 
  export  default function Agenda(){
-  // Hooks para autenticação
 
   const { user } = useAuth();
 
-  // Estados para gerenciar a UI
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  // Estados de loading e erro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Estados para gerenciamento de modais e formulários
   const [showNewForm, setShowNewForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
 
-  // Estados do formulário de novo agendamento
-  const [newForm, setNewForm] = useState<NewAppointmentForm>({ date: '', serviceId: '', startTime: '' });
+
+  const [newForm, setNewForm] = useState<NewAppointmentForm>({ date: '', serviceId: '', startTime: '', clientName: '' });
   const [newFormLoading, setNewFormLoading] = useState(false);
   const [newFormError, setNewFormError] = useState('');
 
-  // Estados do formulário de edição
-  const [editForm, setEditForm] = useState<EditAppointmentForm>({ date: '', startTime: '', endTime: '', serviceIds: [] });
+  const [editForm, setEditForm] = useState<EditAppointmentForm>({ date: '', startTime: '', endTime: '', clientName: '', serviceIds: [] });
   const [editFormLoading, setEditFormLoading] = useState(false);
   const [editFormError, setEditFormError] = useState('');
 
-  // Estado para o filtro de data
+
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Estado para notificações (toasts)
+
   const [toastMessage, setToastMessage] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Ref para focar no input de data
+
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  // Efeito para focar o input de data no novo formulário quando ele aparece
+
+  const [dailyCount, setDailyCount] = useState(0);
+  const [weeklyCount, setWeeklyCount] = useState(0);
+  const [monthlyCount, setMonthlyCount] = useState(0);
+
+
   useEffect(() => {
     if (showNewForm && dateInputRef.current) {
       dateInputRef.current.focus();
@@ -103,13 +101,30 @@ interface EditAppointmentForm {
     console.log('Estado do novo formulário:', newForm);
   }, [newForm]);
 
-  // Função para exibir toasts
   const showToast = (message: string, type: 'success' | 'error') => {
     setToastMessage({ message, type });
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Função para buscar agendamentos
+  const fetchAppointmentCounts = useCallback(async () => {
+    if (!user) return;
+    try {
+      const dailyRes = await api.get('/appointments/count', { params: { period: 'day', barberId: user.id } });
+      const weeklyRes = await api.get('/appointments/count', { params: { period: 'week', barberId: user.id } });
+      const monthlyRes = await api.get('/appointments/count', { params: { period: 'month', barberId: user.id } });
+
+      setDailyCount(dailyRes.data.count);
+      setWeeklyCount(weeklyRes.data.count);
+      setMonthlyCount(monthlyRes.data.count);
+    } catch (e) {
+      console.error('Erro ao buscar contagens:', e);
+    }
+  }, [user]);
+
+  useEffect(() => {
+      fetchAppointmentCounts();
+    }, [fetchAppointmentCounts])
+
   const fetchAppointments = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -130,7 +145,6 @@ interface EditAppointmentForm {
     }
   }, [user, filterDate]);
 
-  // Função para buscar serviços
   const fetchServices = useCallback(async () => {
     try {
       const res = await api.get('/services');
@@ -141,13 +155,11 @@ interface EditAppointmentForm {
     }
   }, []);
 
-  // Efeito para carregar dados iniciais (agendamentos e serviços)
   useEffect(() => {
     fetchAppointments();
     fetchServices();
   }, [fetchAppointments, fetchServices]);
 
-  // Função para buscar horários disponíveis
   const fetchAvailableSlots = useCallback(async () => {
     const { date, serviceId } = newForm;
     if (!date || !serviceId || !user) {
@@ -169,12 +181,10 @@ interface EditAppointmentForm {
     }
   }, [newForm, user]);
 
-  // Efeito para buscar horários disponíveis sempre que a data ou serviço mudar
   useEffect(() => {
     fetchAvailableSlots();
   }, [newForm.date, newForm.serviceId, fetchAvailableSlots]);
 
-  // Função para buscar um único agendamento para a modal de detalhes
   const fetchAppointmentDetails = async (id: string) => {
     setLoading(true);
     setError('');
@@ -190,7 +200,6 @@ interface EditAppointmentForm {
     }
   };
 
-  // Funções de manipulação de status e deleção
   const handleStatus = async (id: string, status: typeof AppointmentStatus[keyof typeof AppointmentStatus]) => {
     setActionLoading(id);
     setError('');
@@ -223,16 +232,9 @@ interface EditAppointmentForm {
     }
   };
 
-  // Função para lidar com o envio do formulário de novo agendamento
   const handleNewFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Iniciando handleNewFormSubmit...');
-    console.log('Valores do formulário:', newForm);
-      console.log('Verificação de variáveis de contexto na submissão:', {
-        userExists: !!user,
-    });
     if (!user || !newForm.date || !newForm.serviceId || !newForm.startTime) {
-      console.error('Campos obrigatórios não preenchidos. Enviando erro.');
       setNewFormError('Por favor, preencha todos os campos obrigatórios.');
       showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
       return;
@@ -244,7 +246,6 @@ interface EditAppointmentForm {
       const selectedService = services.find(s => s.id === newForm.serviceId);
       if (!selectedService) throw new Error('Serviço inválido.');
 
-      // Criar um objeto Date para calcular o horário de término
       const [startHour, startMinute] = newForm.startTime.split(':').map(Number);
       const startDate = new Date(`${newForm.date}T${newForm.startTime}:00`);
       const endDate = new Date(startDate.getTime() + selectedService.duration * 60000);
@@ -260,14 +261,12 @@ interface EditAppointmentForm {
         endTime,
         serviceIds: [newForm.serviceId],
         barberId: user.id,
-        // Removido o unitId do corpo da requisição
+        clientName: newForm.clientName, 
       };
-
-      console.log('Corpo da requisição para a API:', requestBody);
 
       await api.post('/appointments', requestBody,);
       setShowNewForm(false);
-      setNewForm({ date: '', serviceId: '', startTime: '' });
+      setNewForm({ date: '', serviceId: '', startTime: '', clientName: '' });
       fetchAppointments();
       showToast('Agendamento criado com sucesso!', 'success');
     } catch (e: any) {
@@ -278,7 +277,6 @@ interface EditAppointmentForm {
     }
   };
 
-  // Funções para lidar com o formulário de edição
   const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'serviceIds') {
@@ -315,7 +313,6 @@ interface EditAppointmentForm {
     }
   };
 
-  // Funções para abrir as modais
   const openEditModal = () => {
     if (!selectedAppointment) return;
     const initialServiceIds = selectedAppointment.services.map(s => s.service.id);
@@ -324,11 +321,11 @@ interface EditAppointmentForm {
       startTime: selectedAppointment.startTime,
       endTime: selectedAppointment.endTime,
       serviceIds: initialServiceIds,
+      clientName: selectedAppointment.clientName || '',
     });
     setShowEditModal(true);
   };
 
-  // Esqueleto de carregamento para a tabela
   const LoadingSkeleton = () => (
     <div className="animate-pulse space-y-4">
       {[...Array(5)].map((_, i) => (
@@ -343,11 +340,9 @@ interface EditAppointmentForm {
     </div>
   );
 
-  // Renderização do componente
   return (
     <div className="p-4 bg-gray-50 min-h-screen font-sans">
 
-      {/* Toast Notifications */}
       {toastMessage && (
         <div className={`fixed top-4 right-4 z-[100] p-4 rounded-lg shadow-xl text-white flex items-center gap-2 transition-transform duration-300 transform ${toastMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
           {toastMessage.type === 'success' ? <Check size={20} /> : <AlertCircle size={20} />}
@@ -356,7 +351,36 @@ interface EditAppointmentForm {
       )}
 
       <div className="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-        {/* HEADER SECTION: Updated layout to place the calendar below the buttons */}
+
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200 flex items-center gap-4">
+            <CalendarClock className="text-blue-600 h-8 w-8"/>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">{dailyCount}</h3>
+              <p className="text-sm text-gray-600">Agendamentos Hoje</p>
+            </div>
+          </div>
+
+          <div className="bg-green-50 p-6 rounded-lg shadow-sm border border-green-200 flex items-center gap-4">
+            <CalendarDays className="text-green-600 h-8 w-8"/>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">{weeklyCount}</h3>
+              <p className="text-sm text-gray-600">Agendamentos na Semana</p>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 p-6 rounded-lg shadow-sm border border-purple-200 flex items-center gap-4">
+            <BarChart className="text-purple-600 h-8 w-8"/>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">{monthlyCount}</h3>
+              <p className="text-sm text-gray-600">Agendamentos no Mês</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow-lg mt-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b pb-4 gap-2 sm:gap-4">
           <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2 mb-2 sm:mb-0"><Calendar className="h-7 w-7 text-gray-600"/> Agenda</h1>
           <button
@@ -368,7 +392,6 @@ interface EditAppointmentForm {
           </button>
         </div>
 
-        {/* FILTER SECTION: Now a separate block below the header */}
         <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg mb-6 w-full max-w-sm">
           <Filter className="h-5 w-5 text-gray-500"/>
           <input
@@ -379,7 +402,6 @@ interface EditAppointmentForm {
           />
         </div>
 
-        {/* Formulário de Novo Agendamento */}
         {showNewForm && (
           <div className="bg-gray-100 p-6 rounded-xl mb-6 shadow-inner animate-fade-in">
             <h2 className="text-xl font-semibold mb-4 text-gray-700">Criar Novo Agendamento</h2>
@@ -410,6 +432,19 @@ interface EditAppointmentForm {
                     <option key={s.id} value={s.id}>{s.name} ({s.duration} min)</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                <input
+                  name="clientName"
+                  type="text"
+                  placeholder="Nome do Cliente"
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  value={newForm.clientName}
+                  onChange={e => setNewForm(prev => ({ ...prev, clientName: e.target.value }))}
+                  required
+                />
               </div>
 
               <div className="flex items-end gap-2 col-span-1 md:col-span-2 lg:col-span-1">
@@ -452,7 +487,6 @@ interface EditAppointmentForm {
           
         )}
 
-        {/* Tabela de Agendamentos */}
         {loading ? (
           <LoadingSkeleton />
         ) : error ? (
@@ -475,7 +509,7 @@ interface EditAppointmentForm {
                   <tr key={app.id} className="border-t hover:bg-gray-50 transition duration-150">
                     <td className="py-3 px-4 text-sm text-gray-800">{new Date(app.date).toLocaleDateString()}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{app.startTime} - {app.endTime}</td>
-                    <td className="py-3 px-4 text-sm text-gray-800">{app.client?.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{app.clientName || app.client?.name}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{app.services.map(s => s.service.name).join(', ')}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold
@@ -510,7 +544,6 @@ interface EditAppointmentForm {
         )}
       </div>
 
-      {/* Modal de Detalhes e Edição */}
       {showDetailsModal && selectedAppointment && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl relative">
@@ -561,10 +594,9 @@ interface EditAppointmentForm {
                 </div>
               </form>
             ) : (
-              // Modo de visualização de detalhes
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <p className="flex items-center text-sm text-gray-700"><Users size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Cliente:</span> {selectedAppointment.client?.name}</p>
+                  <p className="flex items-center text-sm text-gray-700"><Users size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Cliente:</span> {selectedAppointment.clientName || selectedAppointment.client?.name}</p>
                   <p className="flex items-center text-sm text-gray-700"><Calendar size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Data:</span> {new Date(selectedAppointment.date).toLocaleDateString()}</p>
                   <p className="flex items-center text-sm text-gray-700"><Clock size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Horário:</span> {selectedAppointment.startTime} - {selectedAppointment.endTime}</p>
                   <p className="flex items-center text-sm text-gray-700"><Tag size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Serviços:</span> {selectedAppointment.services.map(s => s.service.name).join(', ')}</p>
@@ -594,7 +626,6 @@ interface EditAppointmentForm {
         </div>
       )}
 
-      {/* Modal de Confirmação de Deleção */}
       {showDeleteModal && appointmentToDelete && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm relative">

@@ -1,11 +1,10 @@
 import { Router, Request, Response } from "express";
 import prisma from "../prisma";
-import { authenticateJWT, AuthRequest } from "../middleware/auth";
 import { pushSubscriptions } from './notification';
 import webpush from 'web-push';
 import { Prisma, Service, AppointmentService, Appointment, AppointmentStatus } from '@prisma/client';
-
-
+//middleware
+import { authenticateJWT, AuthRequest } from "../middleware/auth";
 const router = Router();
 
 
@@ -16,16 +15,16 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       include: { barber: true }
     });
 
-    if (!user || !user.barber) { // Adicionada a verificação para garantir que o barbeiro existe
+    if (!user || !user.barber) { 
       return res.status(403).json({ message: "Acesso negado. Usuário não encontrado." });
     }
 
     const { clientId } = req.query;
     const where: Prisma.AppointmentWhereInput = {
-      barberId: user.barber.id, // Filtra sempre pelo barberId do usuário logado
+      barberId: user.barber.id, 
     };
 
-    // Permite um barbeiro filtrar por um cliente específico
+
     if (clientId) {
       where.clientId = clientId as string;
     }
@@ -140,23 +139,21 @@ router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
     return res.status(401).json({ message: "Usuário não autenticado." });
   }
 
-  // Validação agora não inclui barberId, pois ele será obtido do usuário logado.
+  
   if (!date || !startTime || !endTime || !serviceIds || !Array.isArray(serviceIds)) {
     return res.status(400).json({ message: "Dados obrigatórios: date, startTime, endTime, serviceIds." });
   }
 
   try {
-    // Buscamos o usuário logado e incluímos seu perfil de barbeiro.
     const user = await prisma.user.findUnique({ 
       where: { id: req.userId },
       include: { barber: true }
     });
     
-    if (!user || !user.barber) { // Verificação para evitar o erro 'possibly null'
+    if (!user || !user.barber) { 
       return res.status(401).json({ message: "Usuário não encontrado ou não é um barbeiro." });
     }
     
-    // Pegamos o barberId do perfil de barbeiro do usuário logado.
     const barberId = user.barber.id;
 
     const services = await prisma.service.findMany({
@@ -173,7 +170,7 @@ router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
         endTime,
         status: AppointmentStatus.SCHEDULED, 
         clientId: user.id,
-        barberId: barberId, // Usamos o barberId do usuário logado
+        barberId: barberId, 
         services: {
           create: services.map((s: { id: string; }) => ({
             service: {
@@ -225,9 +222,8 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
 
-    // Validação para garantir que apenas o barbeiro do agendamento pode atualizá-lo.
     const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { barber: true } });
-    if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) { // Verificação para evitar o erro 'possibly null'
+    if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) { 
       return res.status(403).json({ message: "Acesso negado. Você não tem permissão para atualizar este agendamento." });
     }
 
@@ -327,7 +323,6 @@ router.delete("/:id", authenticateJWT, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
 
-    // Validação para garantir que apenas o barbeiro do agendamento pode deletá-lo.
     const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { barber: true } });
     if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) { // Verificação para evitar o erro 'possibly null'
       return res.status(403).json({ message: "Acesso negado. Você não tem permissão para deletar este agendamento." });
@@ -340,6 +335,49 @@ router.delete("/:id", authenticateJWT, async (req: AuthRequest, res: Response) =
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
     res.status(500).json({ error: "Erro ao deletar agendamento." });
+  }
+});
+
+// /src/routes/appointments.ts
+router.get("/count", authenticateJWT, async (req: Request, res: Response) => {
+  const { barberId, period } = req.query;
+
+  if (!barberId || !period) {
+    return res.status(400).json({ message: "ID do barbeiro e período são obrigatórios." });
+  }
+
+  const now = new Date();
+  let startDate: Date;
+
+  switch (period) {
+    case 'day':
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      break;
+    case 'week':
+      const day = now.getDay();
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    default:
+      return res.status(400).json({ message: "Período inválido. Use 'day', 'week' ou 'month'." });
+  }
+
+  try {
+    const count = await prisma.appointment.count({
+      where: {
+        barberId: String(barberId),
+        date: {
+          gte: startDate.toISOString(),
+        },
+      },
+    });
+
+    res.json({ count });
+  } catch (error) {
+    console.error("Erro ao contar agendamentos:", error);
+    res.status(500).json({ message: "Erro ao buscar a contagem de agendamentos." });
   }
 });
 

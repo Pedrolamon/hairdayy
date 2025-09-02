@@ -5,7 +5,7 @@ import { PrismaClient, Product } from '@prisma/client';
 
 const router = Router();
 
-// Listar todos os produtos (sem filtrar por unidade)
+// Listar todos os produtos 
 router.get('/', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany();
@@ -17,17 +17,22 @@ router.get('/', authenticateJWT, async (req: Request, res: Response) => {
 
 // Criar produto
 router.post('/', authenticateJWT, async (req: Request, res: Response) => {
-  const { name, price, stock, category, active } = req.body;
+  const { name, price,stock, category, active } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Nome é obrigatório.' });
   }
+    const Price = Number(price);
+    const Stock = Number(stock);
+    
+    const stockValue = Price * Stock;
   
-  try {
+    try {
     const product = await prisma.product.create({
       data: {
         name,
-        price,
-        stock,
+        price: Price,
+        stock: Stock,
+        stockValue,
         category,
         active,
       },

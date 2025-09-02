@@ -4,14 +4,50 @@ import { authenticateJWT } from "../middleware/auth";
 import { Prisma } from '@prisma/client';
 
 const router = Router();
-
+//rota para buscar clientes 
 router.get("/", authenticateJWT, async (req: Request, res: Response) => {
   try {
-    const clients = await prisma.user.findMany({ where: { role: "CLIENT" } });
-    if (!Array.isArray(clients)) {
-      return res.status(500).json({ error: "Formato de dados inesperado." });
-    }
-    res.json(clients);
+    const users = await prisma.user.findMany({
+      where: { role: "CLIENT" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        notes: true,
+        isBlocked: true,
+        createdAt: true,
+      },
+    });
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        clientName: { not: null },
+        phone: { not: null },
+      },
+      select: {
+        clientName: true,
+        phone: true,
+      },
+    });
+
+    // 3. Normaliza os clientes do chatbot
+    const chatbotClients = appointments.map(app => ({
+      id: `chatbot-${app.phone}`, 
+      name: app.clientName!,
+      email: null,
+      phone: app.phone!,
+      notes: null,
+      isBlocked: false,
+      createdAt: null,
+    }));
+
+    const merged = [...users, ...chatbotClients];
+    const uniqueClients = Array.from(
+      new Map(merged.map(c => [c.phone || c.id, c])).values()
+    );
+
+    res.json(uniqueClients);
   } catch (error) {
     console.error("Erro na rota /clients:", error);
     res.status(500).json({ error: "Erro ao listar clientes." });
@@ -74,5 +110,34 @@ router.put("/:id/notes", authenticateJWT, async (req: Request, res: Response) =>
     res.status(500).json({ error: "Erro ao salvar notas." });
   }
 });
+
+router.put("/:id/block", authenticateJWT, async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const client = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, isBlocked: true, role: true },
+    });
+
+    if (!client || client.role !== "CLIENT") {
+      return res.status(404).json({ message: "Cliente não encontrado." });
+    }
+
+    const updatedClient = await prisma.user.update({
+      where: { id },
+      data: { isBlocked: !client.isBlocked },
+    });
+
+    res.json({
+      message: `Cliente ${updatedClient.isBlocked ? "bloqueado" : "desbloqueado"} com sucesso.`,
+      client: updatedClient,
+    });
+  } catch (error) {
+    console.error("Erro na rota PUT /clients/:id/block:", error);
+    res.status(500).json({ error: "Erro ao bloquear/desbloquear cliente." });
+  }
+});
+
 
 export default router;

@@ -3,16 +3,15 @@ import { Recursos } from '../components/resourcesIndex';
 import { IndexFooter } from '../components/indexfooter';
 import { Contact } from '../components/contactUsIndex';
 
-export function Index() {
+export  default function Index() {
   return (
     <div className="bg-white text-[#36454F] min-h-screen font-sans">
       <IndexHeader />
 
-      {/* 2. Hero */}
+
       <section className="bg-[#36454F] py-20 px-4">
         <div className="container mx-auto max-w-7xl flex flex-col md:flex-row items-center gap-12">
           
-          {/* Texto */}
           <div className="md:w-1/2 text-left">
             <span className="text-[#B87333] font-semibold text-lg">Sistema para Barbearias</span>
             <h1 className="text-4xl md:text-6xl font-extrabold leading-tight text-white mb-4">
@@ -50,7 +49,7 @@ export function Index() {
           Começar Agora
         </a>
       </section>
-    {/*Sobre nós*/}
+
     <div className="bg-white text-[#36454F] min-h-screen font-sans">
       <section className="bg-white py-16">
         <div className="container mx-auto max-w-5xl text-center">
@@ -61,7 +60,7 @@ export function Index() {
           </p>
         </div>
       </section>
-    {/*planos*/}
+
       <section className="bg-gray-50 py-16" id="planos">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Plano único, tudo incluso</h2>
@@ -87,7 +86,7 @@ export function Index() {
         </div>
       </section>
 
-      {/* CTA Final */}
+
       <section className="bg-[#36454F] py-20 text-center text-white">
         <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para modernizar sua barbearia?</h2>
         <a 

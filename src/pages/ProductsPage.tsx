@@ -2,26 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, Pencil, Trash2, PlusCircle, ShoppingCart } from 'lucide-react';
 import { api } from '../lib/api';
 
-// Interfaces para os tipos de dados
+
 interface Product {
-  id: string; // Mudado para string para corresponder ao backend
+  id: string; 
   name: string;
   price: number;
   stock: number;
+  stockValue: number;
   category?: string;
   active: boolean;
 }
 
 interface Sale {
-  id: string; // Assumindo que o id da venda também é uma string
+  id: string; 
   date: string;
   total: number;
   clientName?: string;
   products: Product[];
-  quantities: { [productId: string]: number }; // ID do produto é uma string
+  quantities: { [productId: string]: number }; 
 }
 
-// Componente de Spinner customizado para remover a dependência externa
+
 const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?: string }) => (
   <div
     style={{ width: size, height: size, borderTopColor: color }}
@@ -30,21 +31,22 @@ const LoadingSpinner = ({ size = '20', color = '#fff' }: { size?: string; color?
 );
 
 export default function Products () {
-  // Estados da aplicação
+
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [form, setForm] = useState<Partial<Product>>({ active: true });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saleForm, setSaleForm] = useState<{ clientName: string; items: { productId: string; qty: number }[] }>({ clientName: '', items: [] });
+  const [calculatedStockValue, setCalculatedStockValue] = useState(0);
 
-  // Estados de feedback visual
+
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingSales, setLoadingSales] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [saleLoading, setSaleLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
 
-  // Exibe uma mensagem temporária
+
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000); 
@@ -55,7 +57,15 @@ export default function Products () {
     fetchSales();
   }, []);
 
-  // Funções para buscar dados
+  useEffect(() => {
+    if (form.price !== undefined && form.stock !== undefined) {
+      setCalculatedStockValue(Number(form.price) * Number(form.stock));
+    } else {
+      setCalculatedStockValue(0);
+    }
+  }, [form.price, form.stock]);
+
+
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
@@ -83,7 +93,6 @@ export default function Products () {
   };
  
 
-  // Funções para manipulação de produtos
   const handleEdit = (p: Product) => {
     setForm(p);
     setEditingId(p.id);
@@ -106,9 +115,9 @@ export default function Products () {
     setFormLoading(true);
     const method = editingId ? 'put' : 'post';
     const url = editingId ? `/products/${editingId}` : '/products';
-    const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
+    const payload = { ...form, price: Number(form.price), stock: Number(form.stock),stockValue: calculatedStockValue };
     try {
-       const res = await api[method](url, payload); // Usando axios com a rota correta
+       const res = await api[method](url, payload); 
     if (res.status >= 200 && res.status < 300) {
       showMessage(editingId ? 'Produto atualizado!' : 'Produto adicionado!', 'success');
       setForm({ active: true });
@@ -122,7 +131,6 @@ export default function Products () {
     }
   };
 
-  // Funções para manipulação de vendas
   const handleSaleChange = (productId: string, qty: number) => {
     setSaleForm((prev) => {
       const items = prev.items.filter((i) => i.productId !== productId);
@@ -170,7 +178,7 @@ export default function Products () {
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans antialiased text-gray-800">
       <div className="max-w-7xl mx-auto">
-        {/* Mensagens de feedback */}
+
         {message.text && (
           <div
             className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in-up ${
@@ -188,7 +196,6 @@ export default function Products () {
             Gerenciar Produtos
           </h2>
 
-          {/* Formulário de Produto */}
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <input
               required
@@ -203,7 +210,7 @@ export default function Products () {
               type="number"
               min={0}
               step={0.01}
-              placeholder="Preço"
+              placeholder="Preço compra"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.price || ''}
               onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
@@ -212,7 +219,7 @@ export default function Products () {
               required
               type="number"
               min={0}
-              placeholder="Estoque"
+              placeholder="Quantidade"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.stock || ''}
               onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) }))}
@@ -267,7 +274,7 @@ export default function Products () {
             </div>
           </form>
 
-          {/* Tabela de Produtos */}
+
           <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
             {loadingProducts ? (
               <div className="flex justify-center p-8">
@@ -278,8 +285,9 @@ export default function Products () {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço Compra</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estoque</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Estoque</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ativo</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
@@ -291,6 +299,7 @@ export default function Products () {
                       <td className="px-6 py-4 whitespace-nowrap">{p.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap">R$ {Number(p.price).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.stock}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">R$ {Number(p.stockValue || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.category || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.active ? 'Sim' : 'Não'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
@@ -316,14 +325,14 @@ export default function Products () {
           </div>
         </div>
 
-        {/* Seção de Vendas */}
+
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
             <ShoppingCart className="w-8 h-8" />
             Registrar Venda
           </h3>
 
-          {/* Formulário de Venda */}
+
           <form onSubmit={handleSaleSubmit} className="grid grid-cols-1 gap-6 mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               <input
@@ -384,6 +393,9 @@ export default function Products () {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produtos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">valor total Venda</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">valor Venda</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">lucro líquido</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
