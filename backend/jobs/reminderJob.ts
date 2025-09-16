@@ -70,7 +70,6 @@ cron.schedule('*/5 * * * *', async () => {
                 };
                 try {
                     await sgMail.send(msg);
-                    console.log(`Lembrete por e-mail enviado para ${user.email}`);
                 } catch (err) {
                     console.error('Erro ao enviar e-mail:', err);
                 }
@@ -84,7 +83,6 @@ cron.schedule('*/5 * * * *', async () => {
                         to: `whatsapp:${user.phone}`,
                         body: `Olá ${user.name}, seu agendamento é às ${app.startTime} em ${app.date}.`,
                     });
-                    console.log(`Lembrete por WhatsApp enviado para ${user.phone}`);
                 } catch (err) {
                     console.error('Erro ao enviar WhatsApp:', err);
                 }
@@ -92,7 +90,6 @@ cron.schedule('*/5 * * * *', async () => {
             
             // Lembrete não enviado
             if (user.reminderChannel === ReminderChannel.NONE) {
-                console.log(`Lembrete não enviado para ${user?.name} (optou por não receber).`);
             }
             
             // Atualiza o registro no banco de dados com Prisma Client

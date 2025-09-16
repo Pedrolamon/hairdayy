@@ -20,6 +20,19 @@ const toNumber = (v: any): number =>
 /** GET /dashboard */
 router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { barber: true, clientAppointments: true }
+    });
+
+    if (!user) {
+      return res.status(403).json({ message: "Acesso negado. Usuário não encontrado." });
+    }
+
+    // 🎯 Lógica de controle de acesso para a rota do dashboard
+    if (user.role === 'CLIENT') {
+      return res.status(403).json({ message: "Acesso negado. Clientes não podem visualizar o dashboard." });
+    }
     const { start, end, barberId } = req.query;
 
     const endParam = parseISODate(end) ?? new Date();
@@ -30,23 +43,40 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       startParam ?? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29)
     );
 
-   
-    const barberFilter =
-      isNonEmpty(String(barberId ?? '')) ? { barberId: String(barberId) } : {};
+    let finalBarberFilter: Prisma.AppointmentWhereInput = {};
+    let finalFinancialRecordFilter: Prisma.FinancialRecordWhereInput = {};
+
+    // 1. Se o usuário é um BARBEIRO, ele só pode ver os próprios dados
+    if (user.role === 'BARBER' && user.barber) {
+      finalBarberFilter.barberId = user.barber.id;
+      finalFinancialRecordFilter = {
+        OR: [
+          { appointment: { barberId: user.barber.id } }, // Registros de agendamentos
+          { userId: user.id } // Outros registros criados pelo barbeiro
+        ]
+      };
+    }
+    // 2. Se o usuário é um ADMIN, ele pode filtrar por barbeiro
+    else if (user.role === 'ADMIN' && isNonEmpty(String(barberId ?? ''))) {
+      finalBarberFilter.barberId = String(barberId);
+      finalFinancialRecordFilter.appointment = { barberId: String(barberId) };
+    }
+
+
 
     const appointments = await prisma.appointment.findMany({
       where: {
         date: { gte: startDate, lte: now },
-        ...barberFilter,
+        ...finalBarberFilter,
       },
       include: {
         barber: { include: { user: true } },
-        services: { include: { service: true } },
+        services: { include: { service: true },  },
       },
     });
 
     const sales = await prisma.sale.findMany({
-      where: { date: { gte: startDate, lte: now } },
+      where: { date: { gte: startDate, lte: now },  userId: user.id,  },
       include: {
         products: { include: { product: true } },
       },
@@ -54,7 +84,7 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 
     const financialRecords = await prisma.financialRecord.findMany({
       where: {
-        date: { gte: startDate, lte: now },
+        date: { gte: startDate, lte: now }, ...finalFinancialRecordFilter,
         ...(isNonEmpty(String(barberId ?? ''))
           ? { appointment: { barberId: String(barberId) } }
           : {}),

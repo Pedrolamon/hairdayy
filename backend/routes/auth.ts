@@ -103,7 +103,67 @@ router.get("/me", authenticateJWT, async (req: AuthRequest, res: Response) => {
 });
 
 //rota para logout
-router.post("/logout", authenticateJWT, (req: AuthRequest, res: Response) => {
+router.post("/logout", authenticateJWT, (req: Request, res: Response) => {
   return res.status(200).json({ message: "Logout bem-sucedido." });
 });
+
+router.delete("/delete-account", authenticateJWT, async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { password } = req.body as { password?: string };
+
+    if (!userId) return res.status(401).json({ message: "Não autorizado." });
+    if (!password) return res.status(400).json({ message: "Senha é obrigatória para exclusão." });
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ message: "Usuário não encontrado." });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(403).json({ message: "Senha incorreta." });
+
+   await prisma.$transaction(async (tx) => {
+  // 1. Notificações
+  await tx.notification.deleteMany({ where: { userId } });
+
+  // 2. AppointmentService (pivot entre appointment e service)
+  await tx.appointmentService.deleteMany({
+    where: { service: { userId } },
+  });
+
+  // 3. Services
+  await tx.service.deleteMany({ where: { userId } });
+
+  // 4. SaleProduct (pivot entre sale e product)
+  await tx.saleProduct.deleteMany({
+    where: { product: { userId } },
+  });
+
+  await tx.saleProduct.deleteMany({
+    where: { sale: { userId } },
+  });
+
+  await tx.product.deleteMany({ where: { userId } });
+  await tx.sale.deleteMany({ where: { userId } });
+  await tx.financialRecord.deleteMany({ where: { userId } });
+  await tx.subscription.deleteMany({ where: { userId } });
+  await tx.referral.deleteMany({ where: { referrerId: userId } });
+  await tx.referral.deleteMany({ where: { refereeId: userId } });
+  await tx.appointment.deleteMany({ where: { clientId: userId } });
+  await tx.availabilityBlock.deleteMany({
+    where: { barber: { userId } },
+  });
+  await tx.barber.deleteMany({ where: { userId } });
+  await tx.personalInformation.deleteMany({ where: { userId } });
+  await tx.user.delete({ where: { id: userId } });
+});
+
+
+    return res.status(200).json({ message: "Conta apagada com sucesso." });
+  } catch (err) {
+    console.error("Erro ao apagar conta:", err);
+    return res.status(500).json({ message: "Erro interno ao apagar conta." });
+  }
+});
+
+
 export default router;

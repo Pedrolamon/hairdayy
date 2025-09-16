@@ -3,7 +3,7 @@ import webpush from 'web-push';
 import prisma from '../prisma'; 
 import { authenticateJWT } from '../middleware/auth';
 import { PrismaClient } from '@prisma/client'; 
-
+import cron from 'node-cron';
 
 const pushSubscriptions: { [userId: string]: any } = {};
 
@@ -140,6 +140,52 @@ router.delete('/history/delete-all', authenticateJWT, async (req: Request & { us
   } catch (error: unknown) {
     res.status(500).json({ error: 'Erro ao excluir todas as notificações.' });
   }
+});
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Lógica de agendamento integrada
+cron.schedule('*/1 * * * *', async () => {
+    console.log('Verificando novos agendamentos...');
+    try {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        const newAppointments = await prisma.appointment.findMany({
+            where: {
+                createdAt: {
+                    gte: fiveMinutesAgo,
+                },
+            },
+            include: {
+                barber: true
+            }
+        });
+
+        if (newAppointments.length > 0) {
+            console.log(`Encontrado ${newAppointments.length} novo(s) agendamento(s).`);
+
+            for (const appointment of newAppointments) {
+                const barberId = appointment.barberId;
+                const barberSubscription = pushSubscriptions[barberId];
+
+                if (barberSubscription) {
+                    const title = 'Novo Agendamento!';
+                    const body = `O cliente ${appointment.clientName || 'anônimo'} agendou um serviço para ${appointment.date.toLocaleDateString('pt-BR')}.`;
+
+                    await webpush.sendNotification(
+                        barberSubscription,
+                        JSON.stringify({ title, body })
+                    );
+
+                    await saveNotification(barberId, title, body);
+                    console.log(`Notificação enviada para o barbeiro ${barberId}.`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erro na tarefa agendada de verificação:', error);
+    }
 });
 
 export { pushSubscriptions };

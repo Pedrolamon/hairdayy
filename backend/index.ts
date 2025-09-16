@@ -14,6 +14,8 @@ import availabilityRouter from "./routes/Availability";
 import adminRoutes from "./routes/admin"
 import barberRouter from "./routes/barbers"
 import chatbot from "./routes/chatbot"
+import personalInformationRoutes from "./routes/personalInformation"
+import publicService from "./routes/publicService"
 
 
 dotenv.config();
@@ -39,6 +41,9 @@ app.use("/api/availability", availabilityRouter)
 app.use("/api/admin", adminRoutes)
 app.use("/api/barberss", barberRouter)
 app.use("/api/chatbot", chatbot)
+app.use("/api/personalInformation", personalInformationRoutes)
+app.use("/api/publicService", publicService)
+
 
 
 

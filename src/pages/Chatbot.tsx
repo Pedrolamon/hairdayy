@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
+import { getPersonalInformation, getBusinessName, getAvailableDates } from '../api/personalInformation';
+import type { AvailableDate } from '../api/personalInformation';
+
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -39,12 +42,14 @@ export default function Chatbot () {
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [cancelMsg, setCancelMsg] = useState('');
   const [reminderChannel, setReminderChannel] = useState<'email' | 'whatsapp' | 'both' | 'none'>('email');
-
+  const [businessName, setBusinessName] = useState<string>('Aparato');
+  const [availableDates, setAvailableDates] = useState<AvailableDate[]>([]);
+  
 
   async function fetchServices() {
     setLoading(true);
     try {
-      const { data: apiServices } = await api.get("/services")
+      const { data: apiServices } = await api.get("/publicService")
       setServices(apiServices)
     } catch (error) {
       console.log(error)
@@ -76,13 +81,22 @@ export default function Chatbot () {
     setAvailableTimes([]);
     setError('');
     try {
+      const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
+
+      console.log('Buscando horários para:', {
+      serviceId: selectedService?.id,
+      barberId: selectedBarber?.id,
+      date: formattedDate
+    });
+
       const { data: apiTimes } = await api.get('/chatbot/open', {
         params: {
           serviceId: selectedService?.id,
           barberId: selectedBarber?.id,
-          date: selectedDate
+          date: formattedDate
         }
       });
+      console.log('Dados da API recebidos (horários):', apiTimes);
       setAvailableTimes(apiTimes);
     } catch (error) {
       setError('Erro ao buscar horários disponíveis.');
@@ -91,12 +105,48 @@ export default function Chatbot () {
     }
   }
 
+  async function fetchAvailableDates() {
+    if (!selectedBarber) return;
+
+    setLoading(true);
+    setAvailableDates([]);
+    setError('');
+    try {
+      console.log('Buscando datas disponíveis para o barbeiro:', selectedBarber.id);
+      const dates = await getAvailableDates(selectedBarber.id.toString());
+      console.log('Datas recebidas:', dates);
+      setAvailableDates(dates);
+    } catch (error) {
+      console.error('Erro ao buscar datas disponíveis:', error);
+      setError('Erro ao buscar datas disponíveis.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    if (step === 'service') {      
+    // Fetch business name on component mount
+    const fetchBusinessName = async () => {
+      try {
+        const name = await getBusinessName();
+        setBusinessName(name);
+      } catch (error) {
+        console.error('Erro ao buscar nome da empresa:', error);
+        // Keep default 'Aparato'
+      }
+    };
+    fetchBusinessName();
+  }, []);
+
+  useEffect(() => {
+    if (step === 'service') {
       fetchServices();
     }
     if (step === 'barber') {
       fetchBarbers();
+    }
+    if (step === 'date' && selectedBarber) {
+      fetchAvailableDates();
     }
     if (step === 'time' && selectedService && selectedBarber && selectedDate) {
       fetchAvailableTimes();
@@ -153,7 +203,6 @@ export default function Chatbot () {
           phone: phone,
         });
       const data = res.data;
-      console.log('handleConfirm: data do POST', data);
       setAppointmentDetails(data);
       setServiceToken(data.serviceToken); 
       setSuccessMsg('Agendamento realizado com sucesso!');
@@ -161,7 +210,6 @@ export default function Chatbot () {
       const detailsRes = await api.get(`/chatbot/${data.id}`);
       const details = await detailsRes.data
       setAppointmentDetails(Array.isArray(details) ? null : details);
-      console.log('setAppointmentDetails (detalhes):', details, Array.isArray(details));
       setSuccessMsg('Agendamento realizado com sucesso!');
       setStep('success');
     } catch (err) {
@@ -171,15 +219,16 @@ export default function Chatbot () {
     }
   };
   
+
   return (
 <div className="h-screen w-screen flex items-center justify-center bg-[#36454F] relative flex-col">
-   <a href="/clientAppointments" className='p-2 bg-[#B87333] text-white rounded-lg absolute top-4 right-4 hover:bg-[#d88f4c]'>Meus agendamentos</a>
+   <a href={`/clientAppointments?phone=${phone}`} className='p-2 bg-[#B87333] text-white rounded-lg absolute top-4 right-4 hover:bg-[#d88f4c]'>Meus agendamentos</a>
     <div className=" w-full max-w-[180vh] "> 
       <h2 className="text-3xl font-bold mb-6 text-[#B87333]">Assistente Virtual</h2>
     
       {step === 'greeting' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 text-lg rounded-lg p-5 min-w-50">{getGreeting()}! Sou o assistente virtual do <span className="font-semibold">Aparato</span>. Qual o seu nome, por favor?</div>
+          <div className="bg-[#4a5568] text-gray-200 text-lg rounded-lg p-5 min-w-50">{getGreeting()}! Sou o assistente virtual do <span className="font-semibold">{businessName}</span>. Qual o seu nome, por favor?</div>
           <form onSubmit={handleNameSubmit} className="flex gap-2 mt-4">
             <input
               className="border border-[#B87333] bg-gray-700 text-white rounded-full px-5 py-3 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
@@ -271,31 +320,34 @@ export default function Chatbot () {
             <p>Barbeiro selecionado: <span className="font-semibold">{selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'Sem preferência'}</span></p>
             <p>Serviço: <span className="font-semibold">{selectedService?.name}</span></p>
           </div>
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha uma data:</div>
-          <div className="flex flex-col gap-2 mt-4">
-            <input
-              type="date"
-              className="border border-[#B87333] bg-gray-700 text-white rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
-              value={selectedDate}
-              onChange={e => handleDateSelect(e.target.value)}
-              aria-label="Escolha uma data"
-            />
-          </div>
-          {selectedDate && (
-            <button
-              className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200"
-              onClick={() => setStep('time')}
-              disabled={loading}
-            >
-              Ver horários disponíveis
-            </button>
-          )}
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha uma data disponível:</div>
+          {loading && <div className="text-gray-400 mt-2">Carregando datas disponíveis...</div>}
+          {error && <div className="text-red-400 mt-2">{error}</div>}
+          {availableDates.length > 0 ? (
+            <div className="date-carousel">
+              {availableDates.map(date => (
+                <button
+                  key={date.date}
+                  className={`date-card bg-gray-700 hover:bg-gray-600 text-white rounded-lg p-20 transition-all duration-200 flex flex-col items-center justify-center border-2 focus:outline-none ${
+                    selectedDate === date.date
+                      ? 'border-[#B87333] bg-[#B87333] bg-opacity-20'
+                      : 'border-transparent hover:border-[#B87333]'
+                  }`}
+                  onClick={() => handleDateSelect(date.date)}
+                >
+                  <div className="text-lg font-medium text-gray-300 mb-1">{date.dayOfWeek}</div>
+                  <div className="text-2xl font-bold text-[#B87333] mb-1">{date.day}</div>
+                  <div className="text-xs text-gray-400">{date.month}</div>
+                </button>
+              ))}
+            </div>
+          ) : !loading && <div className="text-gray-400 mt-2">Nenhuma data disponível.</div>}
         </div>
       )}
 
       {step === 'time' && (
-        <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Horários disponíveis para {selectedDate && new Date(selectedDate).toLocaleDateString()}:</div>
+        <div className="space-y-4 w-full">
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Horários disponíveis para {selectedDate && selectedDate.split('-').reverse().join('/')}:</div>
           {loading && <div className="text-gray-400 mt-2">Carregando horários...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           {availableTimes.length > 0 ? (
@@ -321,7 +373,7 @@ export default function Chatbot () {
             <li><b>Nome:</b> {name}</li>
             <li><b>Serviço:</b> {selectedService?.name}</li>
             <li><b>Barbeiro:</b> {selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'Sem preferência'}</li>
-            <li><b>Data:</b> {selectedDate && new Date(selectedDate).toLocaleDateString()}</li>
+            <li><b>Data:</b> {selectedDate && selectedDate.split('-').reverse().join('/')}</li>
             <li><b>Horário:</b> {selectedTime}</li>
           </ul>
           <button

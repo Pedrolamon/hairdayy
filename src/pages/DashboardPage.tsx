@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import AgendaInfoCards from '../components/dailyEarnings';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
@@ -24,7 +25,7 @@ import {
   CheckCircle,
   X,
   RefreshCcw,
-  Plus,
+  Calendar,
 } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement, ArcElement);
@@ -199,15 +200,17 @@ export default function Dashboard () {
             href="/Agenda"
             className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 flex items-center justify-center gap-2"
           >
-            <Plus className="h-5 w-5" /> Novo Agendamento
+            <Calendar className="h-5 w-5" /> Agenda
           </a>
 
           </div>
         </div>
+        <AgendaInfoCards/>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-blue-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <CalendarDays className="w-10 h-10" />
+               
             <div>
               <div className="text-sm font-semibold opacity-80">Total de Agendamentos</div>
               <div className="text-4xl font-bold">{data.totalAppointments}</div>
@@ -299,31 +302,6 @@ export default function Dashboard () {
                     data: data.topServices.map((s: any) => s[1]),
                     backgroundColor: ['#2563eb', '#22c55e', '#f59e42', '#a78bfa', '#f43f5e'],
                     hoverBackgroundColor: ['#1d4ed8', '#15803d', '#d97706', '#9333ea', '#be123c'],
-                  }],
-                }}
-              />
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Barbeiros</h3>
-            <div className="w-full h-80">
-              <Pie
-                options={{
-                  ...chartOptions,
-                  plugins: {
-                    ...chartOptions.plugins,
-                    legend: {
-                      position: 'right' as const,
-                    },
-                    title: { display: true, text: 'Barbeiros com Mais Vendas' },
-                  },
-                }}
-                data={{
-                  labels: data.topBarbers.map((b: any) => b[0]),
-                  datasets: [{
-                    data: data.topBarbers.map((b: any) => b[1]),
-                    backgroundColor: ['#a78bfa', '#f59e42', '#2563eb', '#22c55e', '#f43f5e'],
-                    hoverBackgroundColor: ['#9333ea', '#d97706', '#1d4ed8', '#15803d', '#be123c'],
                   }],
                 }}
               />

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { api } from '../lib/api';
 import { PlusCircle, Pencil, Trash, CheckCircle, X, RefreshCcw } from 'lucide-react';
+import { useAuth } from "../hooks/use-auth"
 
 interface Service {
   id: string;
@@ -25,18 +26,20 @@ export default function Services ()  {
   const [editing, setEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const { user } = useAuth();
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Exibe uma mensagem temporária
   const showMessage = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: '', type: '' }), 5000);
   };
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
+ useEffect(() => {
+    if (user) {
+      fetchServices();
+    }
+  }, [user]);
 
   useEffect(() => {
     if ((editing || !editing) && nameInputRef.current) {
@@ -50,6 +53,7 @@ export default function Services ()  {
       const { data } = await api.get<Service[]>("/services");
       setServices(data);
     } catch (error: any) {
+       console.error('Erro na requisição:', error.response?.status, error.message);
       showMessage(error.message || 'Erro ao buscar serviços.', 'error');
     } finally {
       setLoading(false);

@@ -77,6 +77,7 @@ interface EditAppointmentForm {
 
 
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterType, setFilterType] = useState<'all' | 'today' | 'week' | 'month' | 'specific'>('today');
 
 
   const [toastMessage, setToastMessage] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -98,7 +99,6 @@ interface EditAppointmentForm {
 
 
   useEffect(() => {
-    console.log('Estado do novo formulário:', newForm);
   }, [newForm]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -107,58 +107,59 @@ interface EditAppointmentForm {
   };
 
   const fetchAppointmentCounts = useCallback(async () => {
-    if (!user) return;
     try {
-      const dailyRes = await api.get('/appointments/count', { params: { period: 'day', barberId: user.id } });
-      const weeklyRes = await api.get('/appointments/count', { params: { period: 'week', barberId: user.id } });
-      const monthlyRes = await api.get('/appointments/count', { params: { period: 'month', barberId: user.id } });
+      const dailyRes = await api.get('/appointments/count', { params: { period: 'day' } });
+      const weeklyRes = await api.get('/appointments/count', { params: { period: 'week' } });
+      const monthlyRes = await api.get('/appointments/count', { params: { period: 'month' } });
 
       setDailyCount(dailyRes.data.count);
       setWeeklyCount(weeklyRes.data.count);
       setMonthlyCount(monthlyRes.data.count);
     } catch (e) {
-      console.error('Erro ao buscar contagens:', e);
     }
   }, [user]);
 
-  useEffect(() => {
-      fetchAppointmentCounts();
-    }, [fetchAppointmentCounts])
 
   const fetchAppointments = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/appointments', {
-    params: {
-      barberId: user.id,
-      date: filterDate,
-    }
-   });
-  setAppointments(res.data);
+      const params: any = {};
+
+      if (filterType === 'specific') {
+        params.date = filterDate;
+      } else {
+        params.period = filterType;
+      }
+
+      const res = await api.get('/appointments', { params });
+      setAppointments(res.data);
     } catch (e: any) {
       setError(e.message);
       showToast(e.message, 'error');
     } finally {
       setLoading(false);
     }
-  }, [user, filterDate]);
+  }, [user, filterDate, filterType]);
 
   const fetchServices = useCallback(async () => {
+    if (!user) return
     try {
       const res = await api.get('/services');
       setServices(res.data);
     } catch (e: any) {
-      console.error('Erro ao buscar serviços:', e);
       showToast('Erro ao buscar serviços.', 'error');
     }
-  }, []);
+  }, [user]);
 
-  useEffect(() => {
-    fetchAppointments();
-    fetchServices();
-  }, [fetchAppointments, fetchServices]);
+   useEffect(() => {
+    if (user) {
+      fetchServices();
+      fetchAppointments();
+      fetchAppointmentCounts();
+    }
+  }, [user, fetchServices, fetchAppointments, fetchAppointmentCounts])
 
   const fetchAvailableSlots = useCallback(async () => {
     const { date, serviceId } = newForm;
@@ -170,8 +171,8 @@ interface EditAppointmentForm {
       const res = await api.get('/appointments/available', {
         params: {
           serviceId: serviceId,
-          barberId: user.id,
           date: date,
+          barberId: user.id
         }
       });
       setAvailableSlots(res.data);
@@ -260,8 +261,7 @@ interface EditAppointmentForm {
         startTime: newForm.startTime,
         endTime,
         serviceIds: [newForm.serviceId],
-        barberId: user.id,
-        clientName: newForm.clientName, 
+        clientName: newForm.clientName,
       };
 
       await api.post('/appointments', requestBody,);
@@ -278,14 +278,17 @@ interface EditAppointmentForm {
   };
 
   const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === 'serviceIds') {
-      const selectedServiceId = value;
+    const target = e.target as HTMLInputElement | HTMLSelectElement;
+    const { name, value, type } = target;
+
+    if (type === 'checkbox') {
+      const checkboxTarget = target as HTMLInputElement;
+      const serviceId = value;
       setEditForm(prev => {
-        const isSelected = prev.serviceIds.includes(selectedServiceId);
+        const isSelected = prev.serviceIds.includes(serviceId);
         const newServiceIds = isSelected
-          ? prev.serviceIds.filter(id => id !== selectedServiceId)
-          : [...prev.serviceIds, selectedServiceId];
+          ? prev.serviceIds.filter(id => id !== serviceId)
+          : [...prev.serviceIds, serviceId];
         return { ...prev, serviceIds: newServiceIds };
       });
     } else {
@@ -300,7 +303,15 @@ interface EditAppointmentForm {
     setEditFormError('');
 
     try {
-      await api.put(`/appointments/${selectedAppointment.id}`, editForm); 
+      const requestBody = {
+        date: editForm.date,
+        startTime: editForm.startTime,
+        endTime: editForm.endTime,
+        serviceIds: editForm.serviceIds,
+        clientName: editForm.clientName,
+      };
+
+      await api.put(`/appointments/${selectedAppointment.id}`, requestBody);
       setShowEditModal(false);
       setShowDetailsModal(false);
       fetchAppointments();
@@ -392,14 +403,74 @@ interface EditAppointmentForm {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg mb-6 w-full max-w-sm">
-          <Filter className="h-5 w-5 text-gray-500"/>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="bg-transparent border-none focus:ring-0 text-gray-700 w-full"
-          />
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <Filter className="h-5 w-5 text-gray-500"/>
+            <span className="text-sm font-medium text-gray-700 mr-2">Filtrar por:</span>
+            
+            <button
+              onClick={() => setFilterType('today')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                filterType === 'today'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Hoje
+            </button>
+            <button
+              onClick={() => setFilterType('week')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                filterType === 'week'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Esta Semana
+            </button>
+            <button
+              onClick={() => setFilterType('month')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                filterType === 'month'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Este Mês
+            </button>
+            <button
+              onClick={() => setFilterType('specific')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                filterType === 'specific'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Data Específica
+            </button>
+            <button
+              onClick={() => setFilterType('all')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
+                filterType === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Todos
+            </button>
+          </div>
+
+          {filterType === 'specific' && (
+            <div className="flex items-center gap-2 bg-gray-100 p-2 rounded-lg w-full max-w-sm">
+              <Calendar className="h-5 w-5 text-gray-500"/>
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-gray-700 w-full"
+              />
+            </div>
+          )}
         </div>
 
         {showNewForm && (
@@ -643,4 +714,3 @@ interface EditAppointmentForm {
     </div>
   );
 };
-

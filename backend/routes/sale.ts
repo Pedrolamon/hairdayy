@@ -8,7 +8,14 @@ const router = Router();
 // Listar vendas
 router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ message: "Não autorizado." });
+    }
+    
     const sales = await prisma.sale.findMany({
+      where: {
+    userId: req.userId!,
+    },
       include: {
         products: {
           include: {
@@ -32,6 +39,10 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { clientName, products, quantities,sellingPrice, total } = req.body;
 
+  if (!req.userId) {
+    return res.status(401).json({ message: "Não autorizado." });
+  }
+
   try {
     const newSale = await prisma.$transaction(async (tx) => {
       const productIds = products as string[];
@@ -44,6 +55,7 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 
       
       const productMap = new Map(productEntities.map((p: Product) => [p.id, p]));
+      
 
       for (const productId of productIds) {
         const product = productMap.get(productId);
@@ -65,6 +77,7 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
           clientName,
           total,
           quantities,
+          userId: req.userId!,
           products: {
             create: productIds.map(productId => ({
               quantity: quantities[productId] || 1,
@@ -94,10 +107,13 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 });
 
 // Detalhes de venda
-router.get('/:id', authenticateJWT, async (req: Request, res: Response) => {
+router.get('/:id', authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const sale = await prisma.sale.findUnique({
-    where: { id },
+  if (!req.userId) {
+    return res.status(401).json({ message: "Não autorizado." });
+  }
+  const sale = await prisma.sale.findFirst({
+    where: { id, userId: req.userId },
     include: {
       products: {
         include: {

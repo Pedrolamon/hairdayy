@@ -5,9 +5,14 @@ import { Prisma } from '@prisma/client';
 
 const router = Router();
 
-async function getFinancialReportData(query: Request['query']) {
+async function getFinancialReportData(req: AuthRequest, query: Request['query']) {
   const { startDate, endDate, type, category, barberId } = query;
-  const where: Prisma.FinancialRecordWhereInput = {};
+
+  if (!req.userId) {
+    return { error: 'Não autorizado.' };
+  }
+  
+  const where: Prisma.FinancialRecordWhereInput = { userId: req.userId, };
 
   if (startDate) {
     where.date = { gte: new Date(startDate as string) };
@@ -17,7 +22,7 @@ async function getFinancialReportData(query: Request['query']) {
   }
   if (type) where.type = type as string;
   if (category) where.category = category as string;
-  if (barberId) where.appointment = { barberId: barberId as string };
+
 
   const records = await prisma.financialRecord.findMany({
     where,
@@ -64,9 +69,9 @@ async function getFinancialReportData(query: Request['query']) {
 
 // Rota para o relatório financeiro
 router.get("/report", authenticateJWT, async (req: AuthRequest, res: Response) => {
+  
   try {
-    const reportData = await getFinancialReportData(req.query);
-    console.log('--- Back-end: Relatório gerado com sucesso.');
+    const reportData = await getFinancialReportData(req,req.query);
     res.json(reportData);
   } catch (error) {
     console.error('--- Back-end: ERRO CRÍTICO NA ROTA /report ---', error);
@@ -78,7 +83,14 @@ router.get("/report", authenticateJWT, async (req: AuthRequest, res: Response) =
 
 router.get("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.userId) {
+      return res.status(401).json({ message: "Não autorizado." });
+    }
+
     const records = await prisma.financialRecord.findMany({
+      where: {
+        userId: req.userId
+      },
       include: { appointment: true },
     });
     res.json(records);
@@ -91,8 +103,11 @@ router.get("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
 router.get("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
+    if (!req.userId) {
+      return res.status(401).json({ message: "Não autorizado." });
+    }
     const record = await prisma.financialRecord.findUnique({
-      where: { id },
+      where: { id, userId: req.userId },
       include: { appointment: true },
     });
     if (!record) {
@@ -107,6 +122,12 @@ router.get("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
 
 router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { type, amount, description, date, category, appointmentId } = req.body;
+  
+   if (!req.userId) {
+    return res.status(401).json({ message: "Não autorizado." });
+  }
+
+
   if (!type || !amount || !date) {
     return res.status(400).json({ message: "Tipo, valor e data são obrigatórios." });
   }
@@ -117,6 +138,7 @@ router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
       description,
       date: new Date(date),
       category,
+      user: { connect: { id: req.userId } },
       appointment: appointmentId ? { connect: { id: appointmentId } } : undefined,
     };
     const record = await prisma.financialRecord.create({ data });
@@ -130,6 +152,9 @@ router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
 router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { type, amount, description, date, category, appointmentId } = req.body;
+  if (!req.userId) {
+    return res.status(401).json({ message: "Não autorizado." });
+  }
   const updateData: Prisma.FinancialRecordUpdateInput = {};
   if (type) updateData.type = type;
   if (amount) updateData.amount = new Prisma.Decimal(amount);
@@ -142,6 +167,11 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
     updateData.appointment = { disconnect: true };
   }
   try {
+    const existingRecord = await prisma.financialRecord.findUnique({ where: { id } });
+    if (!existingRecord || existingRecord.userId !== req.userId) {
+      return res.status(403).json({ message: "Acesso negado. Você não tem permissão para atualizar este registro." });
+    }
+
     const record = await prisma.financialRecord.update({
       where: { id },
       data: updateData,
@@ -158,7 +188,15 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
 
 router.delete("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  if (!req.userId) {
+      return res.status(401).json({ message: "Não autorizado." });
+    }
   try {
+    const existingRecord = await prisma.financialRecord.findUnique({ where: { id } });
+    if (!existingRecord || existingRecord.userId !== req.userId) {
+      return res.status(403).json({ message: "Acesso negado. Você não tem permissão para deletar este registro." });
+    }
+
     await prisma.financialRecord.delete({ where: { id } });
     res.json({ message: "Registro removido." });
   } catch (error) {

@@ -1,14 +1,16 @@
 import { Router, Request, Response } from "express";
 import prisma from "../prisma";
-import { authenticateJWT } from "../middleware/auth";
+import { authenticateJWT, AuthRequest } from "../middleware/auth";
 import { Prisma } from '@prisma/client';
 
 const router = Router();
 //rota para buscar clientes 
-router.get("/", authenticateJWT, async (req: Request, res: Response) => {
+router.get("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
-      where: { role: "CLIENT" },
+      where: { role: "CLIENT",
+        createdByAdminId: req.userId,
+       },
       select: {
         id: true,
         name: true,
@@ -22,6 +24,7 @@ router.get("/", authenticateJWT, async (req: Request, res: Response) => {
 
     const appointments = await prisma.appointment.findMany({
       where: {
+        barber: { userId: req.userId },
         clientName: { not: null },
         phone: { not: null },
       },
@@ -55,7 +58,7 @@ router.get("/", authenticateJWT, async (req: Request, res: Response) => {
 });
 
 // Detalhes + histórico
-router.get("/:id", authenticateJWT, async (req: Request, res: Response) => {
+router.get("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
     const client = await prisma.user.findUnique({
@@ -90,7 +93,7 @@ router.get("/:id", authenticateJWT, async (req: Request, res: Response) => {
 });
 
 // Salvar notas
-router.put("/:id/notes", authenticateJWT, async (req: Request, res: Response) => {
+router.put("/:id/notes", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { notes } = req.body;
   if (notes === undefined) {
@@ -111,7 +114,7 @@ router.put("/:id/notes", authenticateJWT, async (req: Request, res: Response) =>
   }
 });
 
-router.put("/:id/block", authenticateJWT, async (req: Request, res: Response) => {
+router.put("/:id/block", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
   try {

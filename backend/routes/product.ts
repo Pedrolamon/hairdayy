@@ -1,14 +1,21 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma'; 
-import { authenticateJWT } from '../middleware/auth';
+import { authenticateJWT, AuthRequest } from '../middleware/auth';
 import { PrismaClient, Product } from '@prisma/client'; 
 
 const router = Router();
 
 // Listar todos os produtos 
-router.get('/', authenticateJWT, async (req: Request, res: Response) => {
+router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
-    const products = await prisma.product.findMany();
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    const products = await prisma.product.findMany({
+      where: {
+        userId: req.userId
+      }
+    });
     res.json(products);
   } catch (error: unknown) {
     res.status(500).json({ error: 'Erro ao listar produtos.' });
@@ -16,9 +23,14 @@ router.get('/', authenticateJWT, async (req: Request, res: Response) => {
 });
 
 // Criar produto
-router.post('/', authenticateJWT, async (req: Request, res: Response) => {
+router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { name, price,stock, category, active } = req.body;
-  if (!name) {
+ 
+if (!req.userId) {
+    return res.status(401).json({ error: 'Não autorizado.' });
+  }
+
+    if (!name) {
     return res.status(400).json({ error: 'Nome é obrigatório.' });
   }
     const Price = Number(price);
@@ -35,6 +47,7 @@ router.post('/', authenticateJWT, async (req: Request, res: Response) => {
         stockValue,
         category,
         active,
+        user: { connect: { id: req.userId } },
       },
     });
     res.status(201).json(product);
@@ -70,9 +83,13 @@ router.put('/:id', authenticateJWT, async (req: Request, res: Response) => {
 });
 
 // Remover produto
-router.delete('/:id', authenticateJWT, async (req: Request, res: Response) => {
+router.delete('/:id', authenticateJWT, async (req:  AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
+    if (!req.userId) {
+      return res.status(401).json({ error: 'Não autorizado.' });
+    }
+    
     const product = await prisma.product.delete({
       where: { id },
     });

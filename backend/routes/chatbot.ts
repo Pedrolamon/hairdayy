@@ -52,59 +52,215 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Rota para buscar horários disponíveis
 router.get("/open", async (req: Request, res: Response) => {
   const { serviceId, barberId, date } = req.query;
 
   if (!serviceId || !barberId || !date) {
+    console.log("Parâmetros faltando:", { serviceId, barberId, date });
     return res.status(400).json({ message: "serviceId, barberId e date são obrigatórios." });
   }
 
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId as string },
-    });
-    if (!service) {
-      return res.status(404).json({ message: "Serviço não encontrado." });
+    // Buscar serviço
+    const service = await prisma.service.findUnique({ where: { id: serviceId as string } });
+    if (!service) return res.status(404).json({ message: "Serviço não encontrado." });
+    console.log("Serviço encontrado:", service);
+
+    // Buscar barbeiro
+    const barber = await prisma.barber.findUnique({ where: { id: barberId as string } });
+    if (!barber) return res.status(404).json({ message: "Barbeiro não encontrado." });
+    console.log("Barbeiro encontrado:", barber);
+
+    // Buscar horários do barbeiro
+    const barberInfo = await prisma.personalInformation.findUnique({ where: { userId: barber.userId } });
+    if (!barberInfo || !barberInfo.startTime || !barberInfo.endTime) {
+      return res.status(404).json({ message: "Horário de trabalho do barbeiro não está definido." });
     }
+    console.log("Horário do barbeiro:", barberInfo.startTime, "-", barberInfo.endTime);
 
-    const workStart = 6;
-    const workEnd = 18;
-    const slots: string[] = [];
+    // Converter horários para float
+    const [startHour, startMinute] = barberInfo.startTime.split(':').map(Number);
+    const [endHour, endMinute] = barberInfo.endTime.split(':').map(Number);
+    const workStart = startHour + startMinute / 60;
+    const workEnd = endHour + endMinute / 60;
+    console.log('Horário de trabalho convertido (float):', { workStart, workEnd });
+
     const serviceDurationHours = service.duration / 60;
+    console.log('Duração do serviço (horas):', serviceDurationHours);
 
-    for (let hour = workStart; hour <= workEnd - serviceDurationHours; hour += 0.5) {
-      const start = `${Math.floor(hour).toString().padStart(2, '0')}:${(hour % 1 === 0.5 ? '30' : '00')}`;
-      const endHour = hour + serviceDurationHours;
-      const end = `${Math.floor(endHour).toString().padStart(2, '0')}:${(endHour % 1 === 0.5 ? '30' : '00')}`;
+    // Gerar slots do dia
+    const slots: string[] = [];
+    for (let hour = workStart; hour <= workEnd - serviceDurationHours; hour += serviceDurationHours) {
+      const startMinutes = Math.floor(hour * 60);
+      const endMinutes = Math.floor((hour + serviceDurationHours) * 60);
+      const start = `${Math.floor(startMinutes / 60).toString().padStart(2, '0')}:${(startMinutes % 60).toString().padStart(2, '0')}`;
+      const end = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
       slots.push(`${start}-${end}`);
     }
+    console.log('Slots gerados (antes da filtragem):', slots);
 
-    const appointments: Appointment[] = await prisma.appointment.findMany({
-      where: {
-        barberId: barberId as string,
-        date: new Date(String(date)),
-      },
-    });
+    // Buscar agendamentos e bloqueios
+    const [appointments, blockedBlocks] = await Promise.all([
+      prisma.appointment.findMany({
+        where: { barberId: barberId as string, date: new Date(String(date)) },
+      }),
+      prisma.availabilityBlock.findMany({
+        where: { barberId: barberId as string, date: new Date(String(date)) },
+      }),
+    ]);
+    console.log('Agendamentos encontrados:', appointments);
+    console.log('Bloqueios encontrados:', blockedBlocks);
 
-    const availableSlots = slots.filter(slot => {
-      const [start, end] = slot.split('-');
-      return !appointments.some((app: Appointment) =>
-        (start >= app.startTime && start < app.endTime) ||
-        (end > app.startTime && end <= app.endTime) ||
-        (start < app.startTime && end > app.endTime)
-      );
+    // Converter "HH:MM" em minutos
+    const timeToMinutes = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    // Criar array de slots ocupados em minutos
+    const occupiedSlots: [number, number][] = [
+      ...appointments.map(a => {
+        let start: string, end: string;
+        if (a.startTime.includes('-')) {
+          [start, end] = a.startTime.split('-');
+        } else {
+          start = a.startTime;
+          end = a.endTime;
+        }
+        return [timeToMinutes(start), timeToMinutes(end)] as [number, number];
+      }),
+      ...blockedBlocks.map(b => [timeToMinutes(b.startTime), timeToMinutes(b.endTime)] as [number, number]),
+    ];
+    console.log('Slots ocupados (em minutos):', occupiedSlots);
+
+    // Filtrar slots ocupados
+    let availableSlots = slots.filter(slot => {
+      const [slotStart, slotEnd] = slot.split('-').map(timeToMinutes);
+      return !occupiedSlots.some(([occStart, occEnd]) => slotStart < occEnd && slotEnd > occStart);
     });
+    console.log('Slots disponíveis após filtrar ocupados:', availableSlots);
+
+    // Filtrar slots que já passaram (só se for hoje)
+    const now = new Date();
+    const [year, month, day] = (date as string).split('-').map(Number);
+    const isToday = year === now.getFullYear() && month === now.getMonth() + 1 && day === now.getDate();
+
+    console.log('Data requisitada:', date, 'Hoje:', now.toLocaleDateString(), 'isToday:', isToday);
+
+    if (isToday) {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      availableSlots = availableSlots.filter(slot => {
+        const [slotStart, slotEnd] = slot.split('-').map(timeToMinutes);
+        return slotEnd > currentMinutes; // mantém apenas os que ainda não terminaram
+      });
+      console.log('Slots disponíveis após filtrar horários passados:', availableSlots);
+    }
 
     res.json(availableSlots);
-  } catch (error: unknown) {
+  } catch (error) {
+    console.error("Erro ao buscar horários disponíveis:", error);
     res.status(500).json({ error: "Erro ao buscar horários disponíveis." });
   }
 });
 
 
+// Rota para obter datas disponíveis baseadas nas informações pessoais do barbeiro
+router.get("/available-dates", async (req: Request, res: Response) => {
+  const { barberId } = req.query;
+
+  if (!barberId) {
+    return res.status(400).json({ message: "barberId é obrigatório." });
+  }
+
+  try {
+    // Buscar informações pessoais do barbeiro
+    const barber = await prisma.barber.findUnique({
+      where: { id: barberId as string },
+      include: { user: { include: { personalInfo: true } } }
+    });
+
+    if (!barber) {
+      return res.status(404).json({ message: "Barbeiro não encontrado." });
+    }
+
+    if (!barber.user) {
+      return res.status(404).json({ message: "Usuário do barbeiro não encontrado." });
+    }
+
+    if (!barber.user.personalInfo) {
+      return res.status(404).json({ message: "Informações pessoais não encontradas." });
+    }
+
+    const personalInfo = barber.user.personalInfo;
+    const daysWorked = personalInfo.daysworked ? parseInt(personalInfo.daysworked) :
+    personalInfo.workDays ? personalInfo.workDays : 30; // Default 30 dias
+    const availableDays = personalInfo.availableDays as string[] || ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    const today = new Date();
+    const availableDates = [];
+     
+    // Gerar datas disponíveis nos próximos X dias
+    for (let i = 0; i < daysWorked; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+
+      const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+      const dayOfWeekCapitalized = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+      // Remover o ponto final se existir
+      const dayOfWeekClean = dayOfWeekCapitalized.replace('.', '');
+
+      // Verificar se o dia da semana está disponível
+      if (availableDays.includes(dayOfWeekClean)) {
+        availableDates.push({
+          date: date.toISOString().split('T')[0], // Formato YYYY-MM-DD
+          dayOfWeek: dayOfWeekCapitalized,
+          day: date.getDate(),
+          month: date.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase(),
+          fullDate: date.toLocaleDateString('pt-BR')
+        });
+      }
+    }
+
+    res.json(availableDates);
+  } catch (error: unknown) {
+    console.error("Erro ao buscar datas disponíveis:", error);
+    res.status(500).json({ error: "Erro ao buscar datas disponíveis." });
+  }
+});
+
+// Rota para obter agendamentos por telefone
+router.get("/by-phone", async (req: Request, res: Response) => {
+  const { phone } = req.query;
+  if (!phone) {
+    return res.status(400).json({ message: "Telefone é obrigatório." });
+  }
+  try {
+    const appointments = await prisma.appointment.findMany({
+      where: { phone: phone as string },
+      include: {
+        client: true,
+        barber: {
+          include: {
+            user: true,
+          },
+        },
+        services: {
+          include: {
+            service: true,
+          },
+        },
+      },
+      orderBy: { date: 'desc' }, // Mais recente primeiro
+    });
+    res.json(appointments);
+  } catch (error: unknown) {
+    res.status(500).json({ error: "Erro ao obter agendamentos." });
+  }
+});
+
+
 // Rota para obter um agendamento específico
-router.get("/:id", async (req: AuthRequest, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const appointment = await prisma.appointment.findUnique({
@@ -209,114 +365,9 @@ router.post("/", async (req: Request, res: Response) => {
     }
 });
 
-// Rota para atualizar um agendamento existente
-router.put("/:id", async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  const { date, startTime, endTime, status, serviceIds, barberId } = req.body;
-  
-  try {
-    const existingAppointment = await prisma.appointment.findUnique({
-      where: { id },
-      include: { services: { include: { service: true } } },
-    });
-    if (!existingAppointment) {
-      return res.status(404).json({ message: "Agendamento não encontrado." });
-    }
-
-    
-    const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { barber: true } });
-    if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) { // Verificação para evitar o erro 'possibly null'
-      return res.status(403).json({ message: "Acesso negado. Você não tem permissão para atualizar este agendamento." });
-    }
-
-    const updateData: Prisma.AppointmentUpdateInput = {};
-
-    if (date) {
-      updateData.date = new Date(date);
-    }
-    if (startTime) {
-      updateData.startTime = startTime;
-    }
-    if (endTime) {
-      updateData.endTime = endTime;
-    }
-
-    let statusChangedToCompleted = false;
-    let statusChangedToCancelled = false;
-
-    if (status && status !== existingAppointment.status) {
-      const newStatus = status as AppointmentStatus; 
-      if (newStatus === AppointmentStatus.COMPLETED) {
-        statusChangedToCompleted = true;
-      }
-      if (newStatus === AppointmentStatus.CANCELLED) {
-        statusChangedToCancelled = true;
-      }
-      updateData.status = newStatus;
-    }
-
-    if (serviceIds && Array.isArray(serviceIds)) {
-      await prisma.appointmentService.deleteMany({ where: { appointmentId: id } });
-      updateData.services = {
-        create: serviceIds.map((s: string) => ({
-          service: {
-            connect: { id: s }
-          }
-        }))
-      };
-    }
-
-    if (barberId) {
-      const barber = await prisma.barber.findUnique({ where: { id: barberId } });
-      if (!barber) {
-        return res.status(400).json({ message: "Barbeiro não encontrado." });
-      }
-      updateData.barber = { connect: { id: barberId } };
-    }
-    
-
-    const updatedAppointment = await prisma.appointment.update({
-      where: { id },
-      data: updateData,
-      include: { services: { include: { service: true } } },
-    });
-
-    if (statusChangedToCompleted) {
-      const services = existingAppointment.services.map((s: AppointmentService & { service: Service }) => s.service);
-      const total = services.reduce((sum: number, s: Service) => sum + Number(s.price), 0);
-      
-      await prisma.financialRecord.create({
-        data: {
-          type: "income",
-          amount: new Prisma.Decimal(total),
-          description: `Receita de agendamento #${updatedAppointment.id}`,
-          date: updatedAppointment.date,
-          category: "Serviço",
-          appointment: { connect: { id: updatedAppointment.id } },
-        },
-      });
-    }
-
-    if (statusChangedToCancelled) {
-      await prisma.financialRecord.deleteMany({
-        where: {
-          appointmentId: updatedAppointment.id,
-          type: "income"
-        },
-      });
-    }
-
-    res.json(updatedAppointment);
-  } catch (error: unknown) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
-      return res.status(404).json({ message: "Agendamento não encontrado." });
-    }
-    res.status(500).json({ error: "Erro ao atualizar agendamento." });
-  }
-});
 
 // Rota para deletar um agendamento
-router.delete("/:id", async (req: AuthRequest, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
@@ -325,18 +376,12 @@ router.delete("/:id", async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { barber: true } });
-    if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) {
-      return res.status(403).json({ message: "Acesso negado. Você não tem permissão para deletar este agendamento." });
-    }
-
     await prisma.appointment.delete({ where: { id } });
     res.json({ message: "Agendamento removido." });
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
-    console.log("carralho de erro", error)
     res.status(500).json({ error: "Erro ao deletar agendamento." });
   }
 });

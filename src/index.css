@@ -134,3 +134,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom styles for date cards in chatbot */
+.date-card {
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.date-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.date-card:focus {
+  box-shadow: 0 0 0 3px rgba(184, 115, 51, 0.3);
+}
+
+.date-card.selected {
+  border-color: #B87333 !important;
+  background-color: rgba(184, 115, 51, 0.1);
+}
+
+/* Carrossel horizontal para as datas */
+.date-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #B87333 #f1f1f1;
+}
+
+.date-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.date-carousel::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.date-carousel::-webkit-scrollbar-thumb {
+  background: #B87333;
+  border-radius: 3px;
+}
+
+.date-carousel::-webkit-scrollbar-thumb:hover {
+  background: #a66a30;
+}

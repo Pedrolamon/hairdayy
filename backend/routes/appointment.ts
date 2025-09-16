@@ -10,24 +10,64 @@ const router = Router();
 
 router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({ 
+    const user = await prisma.user.findUnique({
       where: { id: req.userId },
       include: { barber: true }
     });
 
-    if (!user || !user.barber) { 
+    if (!user || !user.barber) {
       return res.status(403).json({ message: "Acesso negado. Usuário não encontrado." });
     }
 
-    const { clientId } = req.query;
+    const { clientId, date, period } = req.query;
     const where: Prisma.AppointmentWhereInput = {
-      barberId: user.barber.id, 
+      barberId: user.barber.id,
     };
-
 
     if (clientId) {
       where.clientId = clientId as string;
     }
+
+    // Handle date filtering
+    if (date) {
+      // For specific date, create a date range for that day
+      const specificDate = new Date(date as string);
+      const startOfDay = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate());
+      const endOfDay = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate() + 1);
+
+      where.date = {
+        gte: startOfDay,
+        lt: endOfDay,
+      };
+    } else if (period && period !== 'all') {
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date;
+
+      switch (period) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          break;
+        case 'week':
+          const dayOfWeek = now.getDay();
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (6 - dayOfWeek) + 1);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          break;
+        default:
+          return res.status(400).json({ message: "Período inválido. Use 'all', 'today', 'week' ou 'month'." });
+      }
+
+      where.date = {
+        gte: startDate,
+        lt: endDate,
+      };
+    }
+    // If period is 'all' or no period/date is specified, don't apply date filtering
 
     const appointments = await prisma.appointment.findMany({
       where,
@@ -44,6 +84,9 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
           },
         },
       },
+      orderBy: {
+        date: 'asc',
+      },
     });
     res.json(appointments);
   } catch (error: unknown) {
@@ -52,55 +95,219 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 });
 
 // Rota para buscar horários disponíveis
-router.get("/available", async (req: Request, res: Response) => {
-  const { serviceId, barberId, date } = req.query;
+router.get("/available",authenticateJWT, async (req: AuthRequest, res: Response) => {
+  const { serviceId, barberId, date } = req.query;
 
-  if (!serviceId || !barberId || !date) {
-    return res.status(400).json({ message: "serviceId, barberId e date são obrigatórios." });
+  if (!serviceId || !barberId || !date) {
+    return res.status(400).json({ message: "serviceId, barberId e date são obrigatórios." });
+  }
+
+  try {
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId as string },
+    });
+    if (!service) {
+      return res.status(404).json({ message: "Serviço não encontrado." });
+    }
+
+    const selectedDate = new Date(String(date));
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const barberInfo = await prisma.personalInformation.findUnique({
+      where: { userId: barberId as string },
+    });
+    const workStart = barberInfo?.startTime ? parseFloat(barberInfo.startTime) : 8;
+    const workEnd = barberInfo?.endTime ? parseFloat(barberInfo.endTime) : 18;
+    const serviceDurationMinutes = service.duration;
+    const serviceDurationHours = serviceDurationMinutes / 60;
+    
+    const slots: string[] = [];
+    for (let hour = workStart; hour <= workEnd - serviceDurationHours; hour += 0.5) {
+      const startMinutes = Math.floor(hour * 60);
+      const startHours = Math.floor(startMinutes / 60).toString().padStart(2, '0');
+      const startMins = (startMinutes % 60).toString().padStart(2, '0');
+      const start = `${startHours}:${startMins}`;
+      
+      const endMinutes = Math.floor((hour + serviceDurationHours) * 60);
+      const endHours = Math.floor(endMinutes / 60).toString().padStart(2, '0');
+      const endMins = (endMinutes % 60).toString().padStart(2, '0');
+      const end = `${endHours}:${endMins}`;
+
+      slots.push(`${start}-${end}`);
+    }
+
+    // **2. Buscar AGENDAMENTOS e BLOQUEIOS para o dia**
+    const [appointments, blockedBlocks] = await Promise.all([
+      prisma.appointment.findMany({
+        where: {
+          barberId: barberId as string,
+          date: selectedDate,
+        },
+      }),
+      prisma.availabilityBlock.findMany({
+        where: {
+          barberId: barberId as string,
+          date: selectedDate,
+        },
+      }),
+    ]);
+
+    // Combine os horários ocupados (agendamentos + bloqueios)
+    const occupiedSlots = [...appointments, ...blockedBlocks];
+
+    // **3. Filtrar os horários disponíveis**
+    const availableSlots = slots.filter(slot => {
+      const [start, end] = slot.split('-');
+      
+      return !occupiedSlots.some((occupied: any) =>
+        (start >= occupied.startTime && start < occupied.endTime) ||
+        (end > occupied.startTime && end <= occupied.endTime) ||
+        (start < occupied.startTime && end > occupied.endTime)
+      );
+    });
+
+    res.json(availableSlots);
+  } catch (error: unknown) {
+    console.error("Erro ao buscar horários disponíveis:", error);
+    res.status(500).json({ error: "Erro ao buscar horários disponíveis." });
+  }
+});
+
+
+// rota para contar os agendamentos
+router.get("/count", authenticateJWT, async (req: AuthRequest, res: Response) => {
+  const { period } = req.query;
+
+  if (!period) {
+    return res.status(400).json({ message: "Período é obrigatório." });
   }
 
   try {
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId as string },
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      include: { barber: true }
     });
-    if (!service) {
-      return res.status(404).json({ message: "Serviço não encontrado." });
+
+    if (!user || !user.barber) {
+      return res.status(403).json({ message: "Acesso negado. Usuário não encontrado ou não é um barbeiro." });
     }
 
-    const workStart = 8;
-    const workEnd = 18;
-    const slots: string[] = [];
-    const serviceDurationHours = service.duration / 60;
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
 
-    for (let hour = workStart; hour <= workEnd - serviceDurationHours; hour += 0.5) {
-      const start = `${Math.floor(hour).toString().padStart(2, '0')}:${(hour % 1 === 0.5 ? '30' : '00')}`;
-      const endHour = hour + serviceDurationHours;
-      const end = `${Math.floor(endHour).toString().padStart(2, '0')}:${(endHour % 1 === 0.5 ? '30' : '00')}`;
-      slots.push(`${start}-${end}`);
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const day = now.getDay();
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 7);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+      default:
+        return res.status(400).json({ message: "Período inválido. Use 'day', 'week' ou 'month'." });
     }
 
-    const appointments: Appointment[] = await prisma.appointment.findMany({
+    const count = await prisma.appointment.count({
       where: {
-        barberId: barberId as string,
-        date: new Date(String(date)),
+        barberId: user.barber.id,
+        date: {
+          gte: startDate,
+          lt: endDate,
+        },
       },
     });
 
-    const availableSlots = slots.filter(slot => {
-      const [start, end] = slot.split('-');
-      return !appointments.some((app: Appointment) =>
-        (start >= app.startTime && start < app.endTime) ||
-        (end > app.startTime && end <= app.endTime) ||
-        (start < app.startTime && end > app.endTime)
-      );
-    });
-
-    res.json(availableSlots);
-  } catch (error: unknown) {
-    res.status(500).json({ error: "Erro ao buscar horários disponíveis." });
+    res.json({ count });
+  } catch (error) {
+    console.error("Erro ao contar agendamentos:", error);
+    res.status(500).json({ message: "Erro ao buscar a contagem de agendamentos." });
   }
 });
+// No seu arquivo de rotas de agendamentos 
 
+router.get("/profit", authenticateJWT, async (req: AuthRequest, res: Response) => {
+    const { period } = req.query;
+
+    if (!period) {
+        return res.status(400).json({ message: "Período é obrigatório." });
+    }
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.userId },
+            include: { barber: true }
+        });
+
+        if (!user || !user.barber) {
+            return res.status(403).json({ message: "Acesso negado. Usuário não é um barbeiro." });
+        }
+
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date;
+
+        switch (period) {
+            case 'day':
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                break;
+            case 'week':
+                const day = now.getDay();
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+                endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 7);
+                break;
+            case 'month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                break;
+            default:
+                return res.status(400).json({ message: "Período inválido. Use 'day', 'week' ou 'month'." });
+        }
+
+        const appointments = await prisma.appointment.findMany({
+            where: {
+                barberId: user.barber.id,
+                date: {
+                    gte: startDate,
+                    lt: endDate,
+                },
+                status: {
+                    in: ['SCHEDULED', 'COMPLETED', 'ATTENDED'] 
+                }
+            },
+            include: {
+                services: {
+                    include: {
+                        service: true
+                    }
+                }
+            }
+        });
+
+        // Calcula o lucro total somando os preços dos serviços de cada agendamento
+        const totalProfit = appointments.reduce((sum, appointment) => {
+            const appointmentTotal = appointment.services.reduce((serviceSum, as) => {
+                return serviceSum + as.service.price;
+            }, 0);
+            return sum + appointmentTotal;
+        }, 0);
+
+        res.json({ totalProfit });
+
+    } catch (error) {
+        console.error("Erro ao calcular o lucro:", error);
+        res.status(500).json({ message: "Erro ao buscar o lucro dos agendamentos." });
+    }
+});
 
 // Rota para obter um agendamento específico
 router.get("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
@@ -283,6 +490,8 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
       const services = existingAppointment.services.map((s: AppointmentService & { service: Service }) => s.service);
       const total = services.reduce((sum: number, s: Service) => sum + Number(s.price), 0);
       
+  const barberUserId = updatedAppointment.barberId;
+
       await prisma.financialRecord.create({
         data: {
           type: "income",
@@ -290,7 +499,8 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
           description: `Receita de agendamento #${updatedAppointment.id}`,
           date: updatedAppointment.date,
           category: "Serviço",
-          appointment: { connect: { id: updatedAppointment.id } },
+           userId: updatedAppointment.barberId,
+        appointmentId: updatedAppointment.id,
         },
       });
     }
@@ -338,47 +548,5 @@ router.delete("/:id", authenticateJWT, async (req: AuthRequest, res: Response) =
   }
 });
 
-// /src/routes/appointments.ts
-router.get("/count", authenticateJWT, async (req: Request, res: Response) => {
-  const { barberId, period } = req.query;
-
-  if (!barberId || !period) {
-    return res.status(400).json({ message: "ID do barbeiro e período são obrigatórios." });
-  }
-
-  const now = new Date();
-  let startDate: Date;
-
-  switch (period) {
-    case 'day':
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      break;
-    case 'week':
-      const day = now.getDay();
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
-      break;
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
-    default:
-      return res.status(400).json({ message: "Período inválido. Use 'day', 'week' ou 'month'." });
-  }
-
-  try {
-    const count = await prisma.appointment.count({
-      where: {
-        barberId: String(barberId),
-        date: {
-          gte: startDate.toISOString(),
-        },
-      },
-    });
-
-    res.json({ count });
-  } catch (error) {
-    console.error("Erro ao contar agendamentos:", error);
-    res.status(500).json({ message: "Erro ao buscar a contagem de agendamentos." });
-  }
-});
 
 export default router;

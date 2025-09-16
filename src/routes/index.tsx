@@ -24,6 +24,7 @@ import AdminDashboard from "../pages/adminPage";
 import AppointmentActions from "../pages/clientappointments";
 import Payment from "../pages/payment"
 
+
 const publicRoutes = [
   {
     path: "/login",
@@ -73,7 +74,7 @@ const authRoutes = [
     element: <Financial/>
   },
   {
-    path: "/NotificationPanel",
+    path: "/Notification",
     element: <NotificationPanel/>
   },
   {

@@ -3,7 +3,6 @@ import '@testing-library/jest-dom';
 // Mock global do fetch para testes
 global.fetch = jest.fn((input, options) => {
   const url = typeof input === 'string' ? input : input instanceof Request ? input.url : input.toString();
-  console.log('MOCK FETCH:', url, options?.method);
   if (url.startsWith('/api/appointments/available')) {
     const params = new URLSearchParams(url.split('?')[1]);
     if (params.get('date') === '2024-06-20') {
