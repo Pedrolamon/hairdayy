@@ -16,6 +16,8 @@ import barberRouter from "./routes/barbers"
 import chatbot from "./routes/chatbot"
 import personalInformationRoutes from "./routes/personalInformation"
 import publicService from "./routes/publicService"
+import discount from "./routes/discount"
+import referralRoutes from "./routes/referral"
 
 
 dotenv.config();
@@ -43,7 +45,8 @@ app.use("/api/barberss", barberRouter)
 app.use("/api/chatbot", chatbot)
 app.use("/api/personalInformation", personalInformationRoutes)
 app.use("/api/publicService", publicService)
-
+app.use("/api/discount", discount)
+app.use("/api/referral", referralRoutes)
 
 
 

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient, Product } from '@prisma/client';
 import prisma from '../prisma'; // Assumindo que o Prisma Client está inicializado aqui
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
+import { notifyStockLow, notifyStockOut } from "../utils/notificationService";
 
 const router = Router();
 
@@ -97,6 +98,18 @@ router.post('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
       });
       return sale;
     });
+
+    // Verificar estoque após a venda e enviar notificações se necessário
+    for (const saleProduct of newSale.products) {
+      const product = saleProduct.product;
+      const newStock = product.stock;
+      
+      if (newStock === 0) {
+        await notifyStockOut(req.userId!, product.name);
+      } else if (newStock <= 5) { // Considerar estoque baixo se <= 5 unidades
+        await notifyStockLow(req.userId!, product.name, newStock);
+      }
+    }
 
     res.status(201).json(newSale);
 

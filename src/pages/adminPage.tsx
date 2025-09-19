@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
 import { api } from '../lib/api';
+import NotificationBroadcast from '../components/NotificationBroadcast';
 
 // Charts
 import { Bar, Line, Pie } from 'react-chartjs-2';
@@ -259,6 +260,11 @@ const AdminDashboard: React.FC = () => {
 
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard do Administrador</h2>
+
+        {/* Notificação em Massa */}
+        <div className="mb-8">
+          <NotificationBroadcast />
+        </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>

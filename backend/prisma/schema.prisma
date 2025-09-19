@@ -205,11 +205,19 @@ model PersonalInformation {
 }
 
 model Subscription {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status String
-  price  Float
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String
+  price     Float
+  startDate DateTime @default(now())
+}
+
+model PushSubscription {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  subscription Json
+  createdAt    DateTime @default(now())
 }
 
 model Referral {

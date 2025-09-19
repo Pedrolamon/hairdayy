@@ -132,10 +132,12 @@ interface EditAppointmentForm {
       } else {
         params.period = filterType;
       }
-
+      console.log('[FRONT] Buscando appointments com params:', params);
       const res = await api.get('/appointments', { params });
+      console.log('[FRONT] Resposta recebida de /appointments:', res.data);
       setAppointments(res.data);
     } catch (e: any) {
+      console.error('[FRONT] Erro ao buscar appointments:', e);
       setError(e.message);
       showToast(e.message, 'error');
     } finally {
@@ -265,6 +267,7 @@ interface EditAppointmentForm {
       };
 
       await api.post('/appointments', requestBody,);
+      console.log('[FRONT] Enviando novo agendamento:', requestBody);
       setShowNewForm(false);
       setNewForm({ date: '', serviceId: '', startTime: '', clientName: '' });
       fetchAppointments();
@@ -409,7 +412,10 @@ interface EditAppointmentForm {
             <span className="text-sm font-medium text-gray-700 mr-2">Filtrar por:</span>
             
             <button
-              onClick={() => setFilterType('today')}
+              onClick={() => {
+                setFilterType('today');
+                setFilterDate(new Date().toISOString().split('T')[0]);
+              }}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition duration-200 ${
                 filterType === 'today'
                   ? 'bg-blue-600 text-white'

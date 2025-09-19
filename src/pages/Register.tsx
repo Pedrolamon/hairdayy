@@ -22,6 +22,7 @@ interface RegisterFormData {
   password: string;
   role: string;
   phone: string;
+  referralCode?: string
 }
 
 export default function Register() 
@@ -32,6 +33,7 @@ export default function Register()
     password: '',
     role: '',
     phone: '',
+    referralCode: '',
   });
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -62,6 +64,7 @@ export default function Register()
           password: '',
           role: '',
           phone: '',
+          referralCode: '',
         });
         setTimeout(() => {
         navigate('/dashboard');
@@ -162,6 +165,17 @@ export default function Register()
                     onChange={handleChange}
                   />
                 </div>
+                 
+                <div className="grid gap-3">
+                <Label htmlFor="referralCode">Código de Indicação (opcional)</Label>
+                <Input
+                  id="referralCode"
+                  name="referralCode"
+                  value={formData.referralCode}
+                  onChange={handleChange}
+                  placeholder="Digite o código de indicação"
+                />
+              </div>
 
                 <Button
                   type="submit"

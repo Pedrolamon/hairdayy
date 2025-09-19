@@ -1,5 +1,8 @@
 import { api } from '../lib/api';
 import AgendaInfoCards from '../components/dailyEarnings';
+import ReferralDashboard from '../components/ReferralDashboard';
+import ClientMetrics from '../components/ClientMetrics';
+import ClientAnalytics from '../components/ClientAnalytics';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/use-auth';
@@ -43,7 +46,12 @@ export default function Dashboard () {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | '' }>({ text: '', type: '' });
-  const [filters, setFilters] = useState<{ start: string; end: string; barberId: string }>({ start: '', end: '', barberId: '' });
+  const [filters, setFilters] = useState<{ start: string; end: string; barberId: string; clientPeriod: string }>({ 
+    start: '', 
+    end: '', 
+    barberId: '', 
+    clientPeriod: 'current_month' 
+  });
 
   const { isAuth, isLoading } = useAuth();
 
@@ -62,6 +70,7 @@ export default function Dashboard () {
       if (filters.start) params.append('start', filters.start);
       if (filters.end) params.append('end', filters.end);
       if (filters.barberId) params.append('barberId', filters.barberId);
+      if (filters.clientPeriod) params.append('clientPeriod', filters.clientPeriod);
 
         const res = await api.get('/dashboard', {
         params: filters, 
@@ -187,10 +196,26 @@ export default function Dashboard () {
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+            <div className="flex flex-col">
+              <label htmlFor="clientPeriod" className="text-sm font-medium text-gray-600 mb-1">Período de Clientes</label>
+              <select
+                id="clientPeriod"
+                value={filters.clientPeriod}
+                onChange={e => setFilters(f => ({ ...f, clientPeriod: e.target.value }))}
+                className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="current_month">Mês Atual</option>
+                <option value="last_month">Mês Anterior</option>
+                <option value="last_3_months">Últimos 3 Meses</option>
+                <option value="last_6_months">Últimos 6 Meses</option>
+                <option value="last_year">Último Ano</option>
+                <option value="all_time">Todo o Período</option>
+              </select>
+            </div>
             <button
               type="button"
               className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2"
-              onClick={() => setFilters({ start: '', end: '', barberId: '' })}
+              onClick={() => setFilters({ start: '', end: '', barberId: '', clientPeriod: 'current_month' })}
             >
               <RefreshCcw className="w-5 h-5" />
               Limpar Filtros
@@ -206,6 +231,25 @@ export default function Dashboard () {
           </div>
         </div>
         <AgendaInfoCards/>
+        
+        {/* Sistema de Indicações */}
+        <div className="mb-8">
+          <ReferralDashboard />
+        </div>
+
+        {/* Métricas de Clientes */}
+        {data?.clientMetrics && (
+          <div className="mb-8">
+            <ClientMetrics data={data.clientMetrics} />
+          </div>
+        )}
+
+        {/* Análise de Clientes */}
+        {data?.clientMetrics && (
+          <div className="mb-8">
+            <ClientAnalytics data={data.clientMetrics} />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-blue-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">

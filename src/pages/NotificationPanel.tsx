@@ -2,136 +2,203 @@ import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 interface Notification {
-    id: number;
-    title: string;
-    body: string;
-    date: string;
-    read: boolean;
+    id: number;
+    title: string;
+    body: string;
+    date: string;
+    read: boolean;
 }
 
+// Sua chave pública VAPID (gerada no backend)
+const VAPID_PUBLIC_KEY = (await api.get('/notifications/vapid-public-key')).data;
+
+console.log('Chave VAPID carregada:', VAPID_PUBLIC_KEY);
+
+// Função utilitária para converter a chave VAPID (base64 para Uint8Array)
+function urlB64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+// Lógica para registrar a push subscription
+async function registerPushSubscription() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.warn('Push notifications não são suportadas neste navegador.');
+        return;
+    }
+
+    try {
+        const serviceWorkerRegistration = await navigator.serviceWorker.register('/service-worker.js');
+        console.log('Service Worker registrado com sucesso.');
+
+        let subscription = await serviceWorkerRegistration.pushManager.getSubscription();
+
+        if (!subscription) {
+            console.log('Criando nova push subscription...');
+            const applicationServerKey = urlB64ToUint8Array(VAPID_PUBLIC_KEY);
+            subscription = await serviceWorkerRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: applicationServerKey
+            });
+            console.log('Nova subscription criada:', subscription);
+        } else {
+            console.log('Subscription existente encontrada:', subscription);
+        }
+
+        await api.post('/notifications/register', { subscription });
+        console.log('Subscription enviada para o backend com sucesso!');
+    } catch (error) {
+        console.error('Erro ao registrar push subscription:', error);
+    }
+}
+
+
 export default function NotificationPanel() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [msg, setMsg] = useState('');
-    const [search, setSearch] = useState('');
-    const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
-    const [actionLoading, setActionLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const pageSize = 10;
-    const [removing, setRemoving] = useState<Set<number>>(new Set());
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [msg, setMsg] = useState('');
+    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
+    const [actionLoading, setActionLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const pageSize = 10;
+    const [removing, setRemoving] = useState<Set<number>>(new Set());
 
-    const fetchNotifications = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get('/notifications/history');
-            setNotifications(res.data);
-        } catch (error) {
-            console.error("Failed to fetch notifications:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const fetchNotifications = async () => {
+        setLoading(true);
+        console.log('Iniciando busca por notificações...');
+        try {
+            const res = await api.get('/notifications/history');
+            const notificationsData = res.data.notifications;
+            console.log('Resposta completa da API:', res.data);
+            setNotifications(notificationsData || []);
+            if (Array.isArray(notificationsData)) {
+                console.log('Dados de notificações válidos:', notificationsData);
+            setNotifications(notificationsData);
+        } else {
+            console.error("Dados da API não são um array:", res.data);
+            setNotifications([]);
+        }
+        } catch (error) {
+            console.error("Failed to fetch notifications:", error);
+        } finally {
+            setLoading(false);
+            console.log('Busca por notificações finalizada.');
+        }
+    };
 
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
+    // Efeito 1: Busca o histórico de notificações
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
 
-    const showMessage = (text: string, duration = 3000) => {
-        setMsg(text);
-        setTimeout(() => setMsg(''), duration);
-    };
+    // Efeito 2: Registra a push notification
+    useEffect(() => {
+        registerPushSubscription();
+    }, []);
 
-    const markAsRead = async (id: number) => {
-        // Atualização Otimista
-        setNotifications(prev =>
-            prev.map(n => (n.id === id ? { ...n, read: true } : n))
-        );
-        showMessage('Notificação marcada como lida!');
 
-        try {
-            await api.put(`/notifications/history/${id}/read`,);
-        } catch (error) {
-            console.error("Erro ao marcar como lida:", error);
-            // Reverte a alteração
-            setNotifications(prev =>
-                prev.map(n => (n.id === id ? { ...n, read: false } : n))
-            );
-            showMessage('Erro ao marcar como lida. Tente novamente.', 5000);
-        }
-    };
+    const showMessage = (text: string, duration = 3000) => {
+        setMsg(text);
+        setTimeout(() => setMsg(''), duration);
+    };
 
-    const deleteNotification = async (id: number) => {
-        setRemoving(prev => new Set(prev).add(id));
-        showMessage('Notificação excluída!');
+    const markAsRead = async (id: number) => {
+        setNotifications(prev =>
+            prev.map(n => (n.id === id ? { ...n, read: true } : n))
+        );
+        showMessage('Notificação marcada como lida!');
 
-        try {
-            await api.delete(`/notifications/history/${id}`);
-            // Remove a notificação da lista após a animação de fade
-            setTimeout(() => {
-                setNotifications(prev => prev.filter(n => n.id !== id));
-                setRemoving(prev => {
-                    const next = new Set(prev);
-                    next.delete(id);
-                    return next;
-                });
-            }, 400);
-        } catch (error) {
-            console.error("Erro ao excluir:", error);
-            setRemoving(prev => {
-                const next = new Set(prev);
-                next.delete(id);
-                return next;
-            });
-            showMessage('Erro ao excluir notificação. Tente novamente.', 5000);
-        }
-    };
+        try {
+            await api.put(`/notifications/history/${id}/read`,);
+        } catch (error) {
+            console.error("Erro ao marcar como lida:", error);
+            setNotifications(prev =>
+                prev.map(n => (n.id === id ? { ...n, read: false } : n))
+            );
+            showMessage('Erro ao marcar como lida. Tente novamente.', 5000);
+        }
+    };
 
-    const markAllAsRead = async () => {
-        setActionLoading(true);
-        try {
-            await api.put('/notifications/history/mark-all-read',);
-            await fetchNotifications();
-            showMessage('Todas as notificações marcadas como lidas!');
-        } catch (error) {
-            console.error("Erro ao marcar todas como lidas:", error);
-            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
-        } finally {
-            setActionLoading(false);
-        }
-    };
+    const deleteNotification = async (id: number) => {
+        setRemoving(prev => new Set(prev).add(id));
+        showMessage('Notificação excluída!');
 
-    const deleteAll = async () => {
-        if (!window.confirm('Tem certeza que deseja excluir todas as notificações?')) return;
-        setActionLoading(true);
-        try {
-            await api.delete('/notifications/history/delete-all',);
-            await fetchNotifications();
-            showMessage('Todas as notificações excluídas!');
-        } catch (error) {
-            console.error("Erro ao excluir todas:", error);
-            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
-        } finally {
-            setActionLoading(false);
-        }
-    };
+        try {
+            await api.delete(`/notifications/history/${id}`);
+            setTimeout(() => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+                setRemoving(prev => {
+                    const next = new Set(prev);
+                    next.delete(id);
+                    return next;
+                });
+            }, 400);
+        } catch (error) {
+            console.error("Erro ao excluir:", error);
+            setRemoving(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+            showMessage('Erro ao excluir notificação. Tente novamente.', 5000);
+        }
+    };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    const markAllAsRead = async () => {
+        setActionLoading(true);
+        try {
+            await api.put('/notifications/history/mark-all-read',);
+            await fetchNotifications();
+            showMessage('Todas as notificações marcadas como lidas!');
+        } catch (error) {
+            console.error("Erro ao marcar todas como lidas:", error);
+            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
-        if (diffInMinutes < 60) return `${diffInMinutes} min atrás`;
-        if (diffInMinutes < 24 * 60) return `${Math.floor(diffInMinutes / 60)}h atrás`;
+    const deleteAll = async () => {
+        if (!window.confirm('Tem certeza que deseja excluir todas as notificações?')) return;
+        setActionLoading(true);
+        try {
+            await api.delete('/notifications/history/delete-all',);
+            await fetchNotifications();
+            showMessage('Todas as notificações excluídas!');
+        } catch (error) {
+            console.error("Erro ao excluir todas:", error);
+            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    };
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
 
-    const filteredNotifications = notifications
-        .filter(n => (filter === 'all' || (filter === 'unread' ? !n.read : n.read)))
-        .filter(n => n.title.toLowerCase().includes(search.toLowerCase()) || n.body.toLowerCase().includes(search.toLowerCase()));
+        if (diffInMinutes < 60) return `${diffInMinutes} min atrás`;
+        if (diffInMinutes < 24 * 60) return `${Math.floor(diffInMinutes / 60)}h atrás`;
 
-    const totalPages = Math.ceil(filteredNotifications.length / pageSize);
-    const paginatedNotifications = filteredNotifications.slice((page - 1) * pageSize, page * pageSize);
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const filteredNotifications = notifications
+        .filter(n => (filter === 'all' || (filter === 'unread' ? !n.read : n.read)))
+        .filter(n => n.title.toLowerCase().includes(search.toLowerCase()) || n.body.toLowerCase().includes(search.toLowerCase()));
+
+    const totalPages = Math.ceil(filteredNotifications.length / pageSize);
+    const paginatedNotifications = filteredNotifications.slice((page - 1) * pageSize, page * pageSize);
 
     return (
         <div className="p-4 md:p-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-xl">

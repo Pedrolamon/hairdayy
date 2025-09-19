@@ -3,51 +3,108 @@ import bcrypt from "bcrypt";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import { Router, Request, Response } from "express";
 import { authenticateJWT, AuthRequest } from "../middleware/auth";
+import { notifyWelcome } from "../utils/notificationService";
 
 
 const router = Router();
-const prisma = new PrismaClient(); 
+const prisma = new PrismaClient();
+
+// Função para gerar código de indicação amigável
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+} 
 
 // Registro
 router.post("/register", async (req: Request, res: Response) => {
-  const { name, email, password, role, phone } = req.body;
+  const { name, email, password, role, phone, referralCode } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "Nome, email e senha são obrigatórios." });
+    return res
+      .status(400)
+      .json({ message: "Nome, email e senha são obrigatórios." });
   }
 
   try {
+    // Verifica se já existe usuário com esse e-mail
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return res.status(409).json({ message: "E-mail já cadastrado." });
     }
 
+    // Hash da senha
     const hashed = await bcrypt.hash(password, 10);
-    
+
+    // Define papel
     const roleValue = role ? (role.toUpperCase() as UserRole) : UserRole.BARBER;
 
+    // Cria usuário
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashed,
-        role: roleValue, 
+        role: roleValue,
         phone,
+        referralCode: generateReferralCode(), // cada user ganha um código único
         ...(roleValue === UserRole.BARBER && {
-          barber: { create: {} }
-        })
+          barber: { create: {} },
+        }),
       },
       include: {
-        barber: true, 
+        barber: true,
       },
     });
-    
-    return res.status(201).json({ 
-      message: "Usuário registrado com sucesso." ,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role, barber: user.barber }});
+
+    // Cria assinatura inicial (R$30,00 por padrão)
+    await prisma.subscription.create({
+      data: {
+        userId: user.id,
+        price: 30,
+        status: "ACTIVE",
+        startDate: new Date(),
+      },
+    });
+
+    // Se foi passado um código de indicação, cria vínculo
+    if (referralCode) {
+      const referrer = await prisma.user.findUnique({
+        where: { referralCode },
+      });
+
+      if (referrer) {
+        await prisma.referral.create({
+          data: {
+            referrerId: referrer.id,
+            refereeId: user.id,
+            active: true,
+          },
+        });
+      }
+    }
+
+    // Enviar notificação de boas-vindas
+    await notifyWelcome(user.id, user.name);
+
+    return res.status(201).json({
+      message: "Usuário registrado com sucesso.",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        barber: user.barber,
+      },
+    });
   } catch (error) {
     console.error("Erro ao registrar usuário:", error);
-    return res.status(500).json({ message: "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde." });
+    return res.status(500).json({
+      message: "Ocorreu um erro no servidor. Por favor, tente novamente mais tarde.",
+    });
   }
 });
 

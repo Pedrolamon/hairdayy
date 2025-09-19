@@ -6,13 +6,14 @@ interface Authregister {
     password: string;
     role: string;
     phone: string;
+    referralCode?: string;
 }
 
 interface AuthregisterResponse{
     message: string;
 }
 
-export async function Authregister({name, email, password, role, phone }: Authregister) {
-  const { data } = await api.post<AuthregisterResponse>("/auth/register", {name, email, password, role, phone})
+export async function Authregister({name, email, password, role, phone, referralCode }: Authregister) {
+  const { data } = await api.post<AuthregisterResponse>("/auth/register", {name, email, password, role, phone, referralCode})
   return data
 }

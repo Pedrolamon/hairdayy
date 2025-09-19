@@ -22,7 +22,8 @@ import Services from "../pages/BarberServices";
 import PersonalInformation from "../pages/PersonalInformation";
 import AdminDashboard from "../pages/adminPage";
 import AppointmentActions from "../pages/clientappointments";
-import Payment from "../pages/payment"
+import Payment from "../pages/payment";
+import AdminReferralPage from "../pages/AdminReferralPage";
 
 
 const publicRoutes = [
@@ -92,6 +93,10 @@ const authRoutes = [
    {
     path: "/changePayment",
     element: <Payment/>
+  },
+  {
+    path: "/admin-referrals",
+    element: <AdminReferralPage/>
   },
   
 

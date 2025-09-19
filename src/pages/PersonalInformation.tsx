@@ -6,11 +6,13 @@ import {
   updateBusinessName,
   updateWhatsAppMessage,
   updateWorkSchedule
-} from "../api/personalInformation";
+} from "../api/personalInformation";   
 import type { PersonalInformation, WeekDay, WEEK_DAYS } from "../types/personalInformation";
 import DeleteAccount from "../components/deleteAccount";
 //icons
 import { CircleUser, AtSign, Phone, BadgeInfo, SquareScissors, MessageCirclePlus, Copy, Check } from "lucide-react";
+
+
 
 export default function PersonalInformation() {
   const { user, isLoading } = useAuth();
@@ -228,6 +230,37 @@ export default function PersonalInformation() {
             type="button"
             onClick={copyBarberLink}
             className="bg-blue-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-blue-600 transition flex items-center gap-2"
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Copiado!" : "Copiar"}
+          </button>
+        </div>
+      </div>
+
+      <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mt-6">
+        <label htmlFor="referral-code" className="text-lg mb-2 font-medium text-gray-700 dark:text-gray-300">
+          Código de Indicação
+        </label>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+          Compartilhe este código com seus amigos para ganhar descontos e receber pagamentos!
+        </p>
+        <div className="flex items-center gap-3 mt-2">
+          <input
+            type="text"
+            value={user.referralCode || ""}
+            readOnly
+            className="flex-1 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-lg"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              if (user.referralCode) {
+                navigator.clipboard.writeText(user.referralCode);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }
+            }}
+            className="bg-green-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-green-600 transition flex items-center gap-2"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copiado!" : "Copiar"}
