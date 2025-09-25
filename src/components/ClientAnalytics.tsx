@@ -44,7 +44,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
 
   // Dados para o gráfico de distribuição de clientes
   const clientDistributionData = {
-    labels: ['Novos Clientes', 'Clientes Recorrentes'],
+    labels: ['New Customers', 'Recurring Customers'],
     datasets: [
       {
         data: [data.newClientsThisMonth, data.recurringClients],
@@ -64,7 +64,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
     ),
     datasets: [
       {
-        label: 'Agendamentos',
+        label: 'Appointments',
         data: data.topLoyalClients.slice(0, 5).map(client => client.appointmentCount),
         backgroundColor: [
           '#F59E0B',
@@ -123,7 +123,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
       <div className="flex items-center gap-3 mb-6">
         <BarChart3 className="h-6 w-6 text-blue-500" />
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          Análise de Clientes
+          Customer Analysis
         </h2>
       </div>
 
@@ -137,7 +137,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Visão Geral
+          Overview
         </button>
         <button
           onClick={() => setActiveTab('loyalty')}
@@ -147,7 +147,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Fidelidade
+          Fidelity
         </button>
         <button
           onClick={() => setActiveTab('growth')}
@@ -157,7 +157,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          Crescimento
+          Growth
         </button>
       </div>
 
@@ -170,7 +170,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total de Clientes</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Number of customers</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     {data.totalUniqueClients}
                   </p>
@@ -182,7 +182,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Taxa de Retenção</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Retention Rate</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     {calculateRetentionRate()}%
                   </p>
@@ -194,7 +194,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <Target className="h-8 w-8 text-purple-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Crescimento</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Growth</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     +{calculateGrowthRate()}%
                   </p>
@@ -206,7 +206,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
           {/* Gráfico de Distribuição */}
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Distribuição de Clientes
+              Customer Distribution
             </h3>
             <div className="h-64">
               <Doughnut data={clientDistributionData} options={doughnutOptions} />
@@ -220,7 +220,7 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Award className="h-5 w-5 text-yellow-500" />
-              Top 5 Clientes Mais Fiéis
+              Top 5 Most Loyal Customers
             </h3>
             <div className="h-64">
               <Bar data={topClientsData} options={chartOptions} />
@@ -232,12 +232,12 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <Award className="h-8 w-8 text-yellow-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Cliente Mais Fiel</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Most Loyal customer</p>
                   <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
                     {data.topLoyalClients[0]?.clientName || 'N/A'}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {data.topLoyalClients[0]?.appointmentCount || 0} agendamentos
+                    {data.topLoyalClients[0]?.appointmentCount || 0} Appointmens
                   </p>
                 </div>
               </div>
@@ -247,12 +247,12 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Recorrentes</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Recurring Customers</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     {data.recurringClients}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {calculateRetentionRate()}% do total
+                    {calculateRetentionRate()}% of the total
                   </p>
                 </div>
               </div>
@@ -268,11 +268,11 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Novos Clientes</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">New Customers</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     {data.newClientsThisMonth}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Este mês</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">This month</p>
                 </div>
               </div>
             </div>
@@ -281,11 +281,11 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
               <div className="flex items-center gap-3">
                 <Calendar className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Taxa de Crescimento</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Growth rate</p>
                   <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                     +{calculateGrowthRate()}%
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">vs mês anterior</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">vs you last month</p>
                 </div>
               </div>
             </div>
@@ -294,12 +294,12 @@ export default function ClientAnalytics({ data }: ClientAnalyticsProps) {
           {/* Lista de Novos Clientes */}
           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-              Novos Clientes do Mês
+              New Customers of the Month
             </h3>
             {data.newClientsList.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum novo cliente este mês.</p>
+                <p>No new customers this month</p>
               </div>
             ) : (
               <div className="space-y-2">
