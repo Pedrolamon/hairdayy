@@ -20,7 +20,7 @@ export default function NotificationBroadcast() {
     e.preventDefault();
     
     if (!title.trim() || !body.trim()) {
-      showMessage('Título e mensagem são obrigatórios', 'error');
+      showMessage('Title and message are required', 'error');
       return;
     }
 
@@ -32,13 +32,13 @@ export default function NotificationBroadcast() {
         targetRole: targetRole || undefined
       });
 
-      showMessage(`Notificação enviada para ${response.data.recipients} usuários!`, 'success');
+      showMessage(`Notification sent to ${response.data.recipients} users!`, 'success');
       setTitle('');
       setBody('');
       setTargetRole('');
     } catch (error: any) {
       console.error('Erro ao enviar notificação:', error);
-      showMessage(error.response?.data?.error || 'Erro ao enviar notificação', 'error');
+      showMessage(error.response?.data?.error || 'Error sending notification', 'error');
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export default function NotificationBroadcast() {
       <div className="flex items-center gap-3 mb-6">
         <MessageSquare className="h-6 w-6 text-blue-500" />
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          Enviar Notificação em Massa
+          Send Bulk Notification
         </h2>
       </div>
 
@@ -72,7 +72,7 @@ export default function NotificationBroadcast() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Título da Notificação
+            Notification Title
           </label>
           <input
             type="text"
@@ -80,14 +80,14 @@ export default function NotificationBroadcast() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="Ex: Atualização do Sistema"
+            placeholder="Ex: System Update"
             maxLength={100}
           />
         </div>
 
         <div>
           <label htmlFor="body" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Mensagem
+            Message
           </label>
           <textarea
             id="body"
@@ -95,16 +95,16 @@ export default function NotificationBroadcast() {
             onChange={(e) => setBody(e.target.value)}
             rows={4}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="Digite a mensagem que será enviada para os usuários..."
+            placeholder="Enter the message that will be sent to users..."
             maxLength={500}
           />
-          <p className="text-xs text-gray-500 mt-1">{body.length}/500 caracteres</p>
+          <p className="text-xs text-gray-500 mt-1">{body.length}/500 characters</p>
         </div>
 
         <div>
           <label htmlFor="targetRole" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             <Target className="h-4 w-4 inline mr-1" />
-            Público-Alvo
+            Target Audience
           </label>
           <select
             id="targetRole"
@@ -112,20 +112,20 @@ export default function NotificationBroadcast() {
             onChange={(e) => setTargetRole(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
           >
-            <option value="">Todos os usuários</option>
-            <option value="ADMIN">Administradores</option>
-            <option value="BARBER">Barbeiros</option>
-            <option value="CLIENT">Clientes</option>
+            <option value="">All users</option>
+            <option value="ADMIN">Administrators</option>
+            <option value="BARBER">Barbers</option>
+            <option value="CLIENT">Clients</option>
           </select>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <Users className="h-4 w-4" />
           <span>
-            {targetRole === 'ADMIN' && 'Será enviado para todos os administradores'}
-            {targetRole === 'BARBER' && 'Será enviado para todos os barbeiros'}
-            {targetRole === 'CLIENT' && 'Será enviado para todos os clientes'}
-            {!targetRole && 'Será enviado para todos os usuários'}
+            {targetRole === 'ADMIN' && 'It will be sent to all administrators'}
+            {targetRole === 'BARBER' && 'It will be sent to all barbers'}
+            {targetRole === 'CLIENT' && 'It will be sent to all customers'}
+            {!targetRole && 'It will be sent to all users'}
           </span>
         </div>
 
@@ -137,12 +137,12 @@ export default function NotificationBroadcast() {
           {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Enviando...
+             Sending...
             </>
           ) : (
             <>
               <Send className="h-4 w-4" />
-              Enviar Notificação
+             Send Notification
             </>
           )}
         </button>
@@ -150,14 +150,14 @@ export default function NotificationBroadcast() {
 
       <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
         <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">
-          💡 Dicas para Notificações Eficazes
+          💡 Tips for Effective Notifications
         </h3>
         <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-          <li>• Use títulos claros e diretos</li>
-          <li>• Seja conciso na mensagem</li>
-          <li>• Use emojis para chamar atenção</li>
-          <li>• Teste com um grupo pequeno primeiro</li>
-          <li>• Evite spam - use com moderação</li>
+          <li>• Use clear and direct titles</li>
+          <li>• Be concise in your message</li>
+          <li>• Use emojis to grab attention</li>
+          <li>• Test with a small group first</li>
+          <li>• Avoid spam - use sparingly</li>
         </ul>
       </div>
     </div>
