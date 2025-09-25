@@ -10,7 +10,7 @@ export default function DeleteAccount() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("token"); // ajuste conforme seu armazenamento
+  const token = localStorage.getItem("token");
 
   async function handleDelete() {
     setError(null);
@@ -34,7 +34,7 @@ export default function DeleteAccount() {
         setLoading(false);
       localStorage.removeItem("token");
       alert("Conta apagada com sucesso.");
-      navigate("/login"); // ou "/"
+      navigate("/login"); 
     } catch (e) {
       console.error(e);
       setError("Erro de rede.");
@@ -48,24 +48,24 @@ export default function DeleteAccount() {
         className="bg-red-600 text-white px-4 py-2 rounded"
         onClick={() => setOpen(true)}
       >
-        Apagar minha conta
+        Delete my account
       </button>
 
       {open && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="fixed inset-0 bg-black/30" onClick={() => setOpen(false)} />
           <div className="bg-white p-6 rounded shadow-lg w-96 z-50">
-            <h3 className="text-lg font-semibold mb-2">Confirmação</h3>
+            <h3 className="text-lg font-semibold mb-2">Confirmation</h3>
             <p className="mb-4 text-sm text-gray-600">
-              Esta ação é IRREVERSIVEL. Todos os seus dados, incluindo arquivos e informações de perfil, serão PERMANENTEMENTE APAGADOS.
+              This action is IRREVERSIBLE. All your data, including files and profile information, will be PERMANENTLY DELETED.
               <br />
               <br />
-              Digite sua senha para confirmar.
+              Enter your password to confirm.
             </p>
 
             <input
               type="password"
-              placeholder="Senha atual"
+              placeholder="Current password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border px-3 py-2 rounded mb-3"
@@ -79,14 +79,14 @@ export default function DeleteAccount() {
                 onClick={() => { setOpen(false); setPassword(""); setError(null); }}
                 disabled={loading}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 className="px-3 py-2 rounded bg-red-600 text-white"
                 onClick={handleDelete}
                 disabled={loading}
               >
-                {loading ? "Apagando..." : "Apagar conta"}
+                {loading ? "Deleting..." : "Delete account"}
               </button>
             </div>
           </div>
