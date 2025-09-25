@@ -128,11 +128,11 @@ export default function Financial () {
 
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
+    if (!window.confirm('Are you sure you want to remove this record?')) return;
     setLoading(true); 
     try {
       await api.delete(`/financial/${id}`,); 
-      showMessage('Registro removido com sucesso!', 'success');
+      showMessage('Record removed successfully!', 'success');
       fetchReport();
     } catch (e: any) {
       showMessage(e.message, 'error');
@@ -146,12 +146,12 @@ export default function Financial () {
     setFormLoading(true);
 
     if (!form.date) {
-      showMessage('Data é obrigatória.', 'error');
+      showMessage('Date is required.', 'error');
       setFormLoading(false);
       return;
     }
     if (Number(form.amount) <= 0) {
-      showMessage('Valor deve ser maior que zero.', 'error');
+      showMessage('Value must be greater than zero.', 'error');
       setFormLoading(false);
       return;
     }
@@ -168,7 +168,7 @@ export default function Financial () {
     }
       setForm({ type: 'income', amount: '', description: '', date: '', category: '' });
       setEditingId(null);
-      showMessage(editingId ? 'Registro atualizado com sucesso!' : 'Registro lançado com sucesso!', 'success');
+      showMessage(editingId ? 'Registration updated successfully!' : 'Registration launched successfully!', 'success');
       fetchReport();
     } catch (e: any) {
       showMessage(e.message, 'error');
@@ -195,13 +195,13 @@ export default function Financial () {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h2 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
             <DollarSign className="w-8 h-8" />
-            Gerenciar Finanças
+            Manage Finances
           </h2>
 
           <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mb-6">
             <div className="flex flex-col">
               <label htmlFor="type" className="text-sm text-gray-600 mb-1">
-                Tipo
+                Type
               </label>
               <select
                 id="type"
@@ -210,13 +210,13 @@ export default function Financial () {
                 value={form.type}
                 onChange={handleFormChange}
               >
-                <option value="income">Receita</option>
-                <option value="expense">Despesa</option>
+                <option value="income">Revenue</option>
+                <option value="expense">Expense</option>
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="amount" className="text-sm text-gray-600 mb-1">
-                Valor
+                Value
               </label>
               <input
                 ref={amountInputRef}
@@ -234,14 +234,14 @@ export default function Financial () {
             </div>
             <div className="flex flex-col">
               <label htmlFor="category" className="text-sm text-gray-600 mb-1">
-                Categoria
+                Category
               </label>
               <input
                 id="category"
                 name="category"
                 type="text"
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Salário, Material, Aluguel"
+                placeholder="Ex: Salary, Material, Rent"
                 value={form.category}
                 onChange={handleFormChange}
                 required
@@ -263,14 +263,14 @@ export default function Financial () {
             </div>
             <div className="flex flex-col lg:col-span-3">
               <label htmlFor="description" className="text-sm text-gray-600 mb-1">
-                Descrição (opcional)
+                Description (optional)
               </label>
               <input
                 id="description"
                 name="description"
                 type="text"
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Descrição detalhada do registro"
+                placeholder="Detailed record description"
                 value={form.description}
                 onChange={handleFormChange}
               />
@@ -285,7 +285,7 @@ export default function Financial () {
                     setEditingId(null);
                   }}
                 >
-                  Cancelar
+                  Cancel
                 </button>
               )}
               <button
@@ -308,24 +308,24 @@ export default function Financial () {
           <div className="bg-gray-50 rounded-lg p-4 mb-8 flex flex-col md:flex-row items-center gap-4 border border-gray-200">
             <h4 className="font-semibold text-sm text-gray-600 flex items-center gap-2">
               <Search className="w-4 h-4" />
-              Filtrar por data:
+              Filter by date:
             </h4>
             <div className="flex items-center gap-2">
              
-            <label htmlFor="categoryFilter" className="sr-only">Filtrar por Categoria</label>
+            <label htmlFor="categoryFilter" className="sr-only">Filter by Category</label>
             <select
               id="categoryFilter"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
-              <option value="">Todas as Categorias</option>
+              <option value="">All Categories</option>
               {Array.from(allCategories).map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
 
-              <label htmlFor="startDate" className="sr-only">Data de Início</label>
+              <label htmlFor="startDate" className="sr-only">Start Date</label>
               <input
                 id="startDate"
                 type="date"
@@ -333,8 +333,8 @@ export default function Financial () {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
-              <span className="text-gray-500 text-sm">até</span>
-              <label htmlFor="endDate" className="sr-only">Data de Fim</label>
+              <span className="text-gray-500 text-sm">until</span>
+              <label htmlFor="endDate" className="sr-only">End Date</label>
               <input
                 id="endDate"
                 type="date"
@@ -352,14 +352,14 @@ export default function Financial () {
                   setEndDate('');
                 }}
               >
-                Limpar filtro
+                Clear filter
               </button>
             )}
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-2xl font-bold mb-6 text-gray-900">Relatório</h3>
+          <h3 className="text-2xl font-bold mb-6 text-gray-900">Report</h3>
 
           {loading ? (
             <div className="flex justify-center p-8">
@@ -371,37 +371,37 @@ export default function Financial () {
                 <div className="bg-green-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
                   <TrendingUp className="w-10 h-10 text-green-600" />
                   <div>
-                    <div className="text-green-700 font-semibold text-sm">Receitas Totais</div>
-                    <div className="text-3xl font-bold text-green-900">R$ {report.totalReceitas.toFixed(2)}</div>
+                    <div className="text-green-700 font-semibold text-sm">Total Revenue</div>
+                    <div className="text-3xl font-bold text-green-900">$ {report.totalReceitas.toFixed(2)}</div>
                   </div>
                 </div>
                 <div className="bg-red-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
                   <TrendingDown className="w-10 h-10 text-red-600" />
                   <div>
-                    <div className="text-red-700 font-semibold text-sm">Despesas Totais</div>
-                    <div className="text-3xl font-bold text-red-900">R$ {report.totalDespesas.toFixed(2)}</div>
+                    <div className="text-red-700 font-semibold text-sm">Total Expenses</div>
+                    <div className="text-3xl font-bold text-red-900">$ {report.totalDespesas.toFixed(2)}</div>
                   </div>
                 </div>
                 <div className="bg-blue-100 rounded-lg p-5 shadow-sm flex items-center gap-4">
                   <Scale className="w-10 h-10 text-blue-600" />
                   <div>
-                    <div className="text-blue-700 font-semibold text-sm">Balanço</div>
-                    <div className="text-3xl font-bold text-blue-900">R$ {report.balanco.toFixed(2)}</div>
+                    <div className="text-blue-700 font-semibold text-sm">Balance</div>
+                    <div className="text-3xl font-bold text-blue-900">$ {report.balanco.toFixed(2)}</div>
                   </div>
                 </div>
               </div>
 
-              <h4 className="text-xl font-bold mb-4 text-gray-900">Registros Detalhados</h4>
+              <h4 className="text-xl font-bold mb-4 text-gray-900">Detailed Records</h4>
               <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -413,7 +413,7 @@ export default function Financial () {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-bold">
-                          R$ {r.amount.toFixed(2)}
+                          $ {r.amount.toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {r.category || '-'}
@@ -445,7 +445,7 @@ export default function Financial () {
                     {report.registros.length === 0 && (
                       <tr>
                         <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
-                          Nenhum registro encontrado para este período.
+                          No records found for this period.
                         </td>
                       </tr>
                     )}
@@ -455,7 +455,7 @@ export default function Financial () {
             </>
           ) : (
             <div className="text-center text-gray-500 p-8">
-              Nenhum dado financeiro disponível.
+              No financial data available.
             </div>
           )}
         </div>
