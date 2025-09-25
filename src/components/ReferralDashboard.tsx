@@ -98,7 +98,7 @@ export default function ReferralDashboard() {
   if (!referralData) {
     return (
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
-        <p className="text-gray-500 dark:text-gray-400">Erro ao carregar dados de indicação.</p>
+        <p className="text-gray-500 dark:text-gray-400">Error loading referral data.</p>
       </div>
     );
   }
@@ -108,14 +108,14 @@ export default function ReferralDashboard() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <UserPlus className="h-6 w-6 text-blue-500" />
-          Sistema de Indicações
+          Referral System
         </h2>
         <button
           onClick={copyReferralCode}
           className="bg-green-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-green-600 transition flex items-center gap-2"
         >
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          {copied ? "Copiado!" : "Copiar Código"}
+          {copied ? "Copied!" : "Copy Code"}
         </button>
       </div>
 
@@ -123,14 +123,14 @@ export default function ReferralDashboard() {
       <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 p-4 rounded-xl mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Seu código de indicação:</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Your referral code:</p>
             <p className="text-2xl font-mono font-bold text-gray-800 dark:text-gray-100">
               {referralData.referralCode}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Compartilhe e ganhe</p>
-            <p className="text-lg font-bold text-green-600">R$ 10 por indicação!</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Share and win</p>
+            <p className="text-lg font-bold text-green-600">R$ 10 per referral!</p>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total de Indicações</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Referrals</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {referralData.totalReferrals}
               </p>
@@ -153,7 +153,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <TrendingUp className="h-8 w-8 text-green-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Indicações Ativas</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Active Indications</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {referralData.activeReferrals}
               </p>
@@ -165,7 +165,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <Gift className="h-8 w-8 text-yellow-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Desconto Atual</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Current Discount</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 R$ {referralData.currentDiscount}
               </p>
@@ -177,7 +177,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <DollarSign className="h-8 w-8 text-purple-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">A Receber</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Receivable</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 R$ {referralData.currentPayout}
               </p>
@@ -192,7 +192,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <CreditCard className="h-6 w-6 text-green-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Recebido</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Received</p>
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
                 R$ {referralData.totalPayouts}
               </p>
@@ -204,7 +204,7 @@ export default function ReferralDashboard() {
           <div className="flex items-center gap-3">
             <DollarSign className="h-6 w-6 text-orange-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pendente de Pagamento</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Pending Payment</p>
               <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
                 R$ {referralData.pendingPayouts}
               </p>
@@ -219,12 +219,12 @@ export default function ReferralDashboard() {
           Como Funciona o Sistema de Indicações
         </h3>
         <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-          <p>• <strong>1ª indicação:</strong> R$ 10 de desconto na sua mensalidade</p>
-          <p>• <strong>2ª indicação:</strong> R$ 20 de desconto na sua mensalidade</p>
-          <p>• <strong>3ª indicação:</strong> R$ 30 de desconto (mensalidade gratuita!)</p>
-          <p>• <strong>4ª indicação em diante:</strong> R$ 10 por indicação via PIX</p>
+          <p>• <strong>1ª indication:</strong> R$ 10 discount on your monthly fee</p>
+          <p>• <strong>2ª indication:</strong> R$ 20 discount on your monthly fee</p>
+          <p>• <strong>3ª indication:</strong> R$ 30 discount (free monthly fee!)</p>
+          <p>• <strong>4ª indication onwards:</strong> R$ 10 by referral via PIX</p>
           <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-            * Descontos são aplicados automaticamente. Pagamentos via PIX são processados mensalmente.
+            * Discounts are applied automatically. Payments via PIX are processed monthly.
           </p>
         </div>
       </div>
