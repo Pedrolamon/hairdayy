@@ -3,8 +3,8 @@ import { api } from '../lib/api';
 import { getPersonalInformation, getBusinessName, getAvailableDates } from '../api/personalInformation';
 import type { AvailableDate } from '../api/personalInformation';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc'; // Importa o plugin UTC
-import timezone from 'dayjs/plugin/timezone'; // Importa o plugin Timezone
+import utc from 'dayjs/plugin/utc'; 
+import timezone from 'dayjs/plugin/timezone'; 
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -61,7 +61,7 @@ export default function Chatbot () {
       setServices(apiServices)
     } catch (error) {
       console.log(error)
-      // TODO: show toast message to the user
+      setError('Error searching for services.');
     } finally {
       setLoading(false)
     }
@@ -73,12 +73,12 @@ export default function Chatbot () {
       const { data: apiBarbers } = await api.get("/barberss")
       const normalizedBarbers = apiBarbers.map((barber: any) => ({
       ...barber,
-      name: barber.name || barber.user?.name || 'Barbeiro sem nome'
+      name: barber.name || barber.user?.name 
     }));
     setBarbers(normalizedBarbers);
     } catch (error) {
       console.log(error)
-      setError('Erro ao buscar barbeiros.')
+      setError('Error searching for barbers.')
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ export default function Chatbot () {
     try {
       const formattedDate = new Date(selectedDate).toISOString().split('T')[0];
 
-      console.log('Buscando horários para:', {
+      console.log('Searching for times for:', {
       serviceId: selectedService?.id,
       barberId: selectedBarber?.id,
       date: formattedDate
@@ -104,10 +104,10 @@ export default function Chatbot () {
           date: formattedDate
         }
       });
-      console.log('Dados da API recebidos (horários):', apiTimes);
+      console.log('API data received (times):', apiTimes);
       setAvailableTimes(apiTimes);
     } catch (error) {
-      setError('Erro ao buscar horários disponíveis.');
+      setError('Error searching for available times.');
     } finally {
       setLoading(false);
     }
@@ -126,21 +126,19 @@ export default function Chatbot () {
       setAvailableDates(dates);
     } catch (error) {
       console.error('Erro ao buscar datas disponíveis:', error);
-      setError('Erro ao buscar datas disponíveis.');
+      setError('Error searching for available dates.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    // Fetch business name on component mount
     const fetchBusinessName = async () => {
       try {
         const name = await getBusinessName();
         setBusinessName(name);
       } catch (error) {
         console.error('Erro ao buscar nome da empresa:', error);
-        // Keep default 'Aparato'
       }
     };
     fetchBusinessName();
@@ -213,15 +211,15 @@ export default function Chatbot () {
       const data = res.data;
       setAppointmentDetails(data);
       setServiceToken(data.serviceToken); 
-      setSuccessMsg('Agendamento realizado com sucesso!');
+      setSuccessMsg('Scheduling completed successfully!');
       setStep('success')
       const detailsRes = await api.get(`/chatbot/${data.id}`);
       const details = await detailsRes.data
       setAppointmentDetails(Array.isArray(details) ? null : details);
-      setSuccessMsg('Agendamento realizado com sucesso!');
+      setSuccessMsg('Scheduling completed successfully!');
       setStep('success');
     } catch (err) {
-      setError('Erro ao confirmar agendamento.');
+      setError('Error confirming appointmen.');
     } finally {
       setLoading(false);
     }
@@ -230,17 +228,17 @@ export default function Chatbot () {
 
   return (
 <div className="h-screen w-screen flex items-center justify-center bg-[#36454F] relative flex-col">
-   <a href={`/clientAppointments?phone=${phone}`} className='p-2 bg-[#B87333] text-white rounded-lg absolute top-4 right-4 hover:bg-[#d88f4c]'>Meus agendamentos</a>
+   <a href={`/clientAppointments?phone=${phone}`} className='p-2 bg-[#B87333] text-white rounded-lg absolute top-4 right-4 hover:bg-[#d88f4c]'>My appointments</a>
     <div className=" w-full max-w-[180vh] "> 
-      <h2 className="text-3xl font-bold mb-6 text-[#B87333]">Assistente Virtual</h2>
+      <h2 className="text-3xl font-bold mb-6 text-[#B87333]">Virtual Assistant</h2>
     
       {step === 'greeting' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 text-lg rounded-lg p-5 min-w-50">{getGreeting()}! Sou o assistente virtual do <span className="font-semibold">{businessName}</span>. Qual o seu nome, por favor?</div>
+          <div className="bg-[#4a5568] text-gray-200 text-lg rounded-lg p-5 min-w-50">{getGreeting()}! I'm the virtual assistant for <span className="font-semibold">{businessName}</span>. What is your name, please?</div>
           <form onSubmit={handleNameSubmit} className="flex gap-2 mt-4">
             <input
               className="border border-[#B87333] bg-gray-700 text-white rounded-full px-5 py-3 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
-              placeholder="Digite seu nome..."
+              placeholder="Enter your name..."
               value={name}
               onChange={e => setName(e.target.value)}
               autoFocus
@@ -248,20 +246,20 @@ export default function Chatbot () {
             />
               <input
               className="border border-[#B87333] bg-gray-700 text-white rounded-full px-4 py-2 flex-1 focus:outline-none focus:ring-2 focus:ring-[#B87333] transition-all duration-200"
-              placeholder="Digite seu Número..."
+              placeholder="Enter your Number..."
               value={phone}
               onChange={e => setPhone(e.target.value)}
               autoFocus
               required
             />
-            <button type="submit" className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200">Enviar</button>
+            <button type="submit" className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200">Send</button>
           </form>
         </div>
       )}
 
       {step === 'reminder' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3 max-w-xs">Deseja receber lembrete do seu agendamento?</div>
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3 max-w-xs">Do you want to receive a reminder of your appointment?</div>
           <div className="flex flex-col gap-2 mt-4">
             <label className="text-gray-200 flex items-center gap-2 cursor-pointer">
               <input type="radio" name="reminder" checked={reminderChannel === 'email'} onChange={() => setReminderChannel('email')} className="accent-[#B87333]" /> E-mail
@@ -270,20 +268,20 @@ export default function Chatbot () {
               <input type="radio" name="reminder" checked={reminderChannel === 'whatsapp'} onChange={() => setReminderChannel('whatsapp')} className="accent-[#B87333]" /> WhatsApp
             </label>
             <label className="text-gray-200 flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="reminder" checked={reminderChannel === 'both'} onChange={() => setReminderChannel('both')} className="accent-[#B87333]" /> Ambos
+              <input type="radio" name="reminder" checked={reminderChannel === 'both'} onChange={() => setReminderChannel('both')} className="accent-[#B87333]" /> Both
             </label>
             <label className="text-gray-200 flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="reminder" checked={reminderChannel === 'none'} onChange={() => setReminderChannel('none')} className="accent-[#B87333]" /> Não quero lembrete
+              <input type="radio" name="reminder" checked={reminderChannel === 'none'} onChange={() => setReminderChannel('none')} className="accent-[#B87333]" /> I don't want a reminder
             </label>
           </div>
-          <button className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200" onClick={() => setStep('service')}>Continuar</button>
+          <button className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200" onClick={() => setStep('service')}>Continue</button>
         </div>
       )}
 
       {step === 'service' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Ótimo, <span className="font-semibold text-white">{name}</span>! Agora, escolha o serviço desejado:</div>
-          {loading && <div className="text-gray-400 mt-2">Carregando serviços...</div>}
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Excellent, <span className="font-semibold text-white">{name}</span>!Now, choose the desired service :</div>
+          {loading && <div className="text-gray-400 mt-2">Loading services...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
             {services.map(service => (
@@ -305,8 +303,8 @@ export default function Chatbot () {
 
       {step === 'barber' && selectedService && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha um barbeiro</div>
-          {loading && <div className="text-gray-400 mt-2">Carregando barbeiros...</div>}
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Choose a barber</div>
+          {loading && <div className="text-gray-400 mt-2">Loading barbers...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           <div className="flex flex-wrap gap-2 mt-4">
             {barbers.map(barber => (
@@ -325,11 +323,11 @@ export default function Chatbot () {
       {step === 'date' && (
         <div className="space-y-4">
           <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">
-            <p>Barbeiro selecionado: <span className="font-semibold">{selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'Sem preferência'}</span></p>
-            <p>Serviço: <span className="font-semibold">{selectedService?.name}</span></p>
+            <p>Selected barber: <span className="font-semibold">{selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'No preference'}</span></p>
+            <p>Service: <span className="font-semibold">{selectedService?.name}</span></p>
           </div>
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Escolha uma data disponível:</div>
-          {loading && <div className="text-gray-400 mt-2">Carregando datas disponíveis...</div>}
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Choose an available date:</div>
+          {loading && <div className="text-gray-400 mt-2">Loading available dates...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           {availableDates.length > 0 ? (
             <div className="date-carousel">
@@ -349,14 +347,14 @@ export default function Chatbot () {
                 </button>
               ))}
             </div>
-          ) : !loading && <div className="text-gray-400 mt-2">Nenhuma data disponível.</div>}
+          ) : !loading && <div className="text-gray-400 mt-2">No dates available.</div>}
         </div>
       )}
 
       {step === 'time' && (
         <div className="space-y-4 w-full">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Horários disponíveis para {selectedDate && selectedDate.split('-').reverse().join('/')}:</div>
-          {loading && <div className="text-gray-400 mt-2">Carregando horários...</div>}
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Available times for {selectedDate && selectedDate.split('-').reverse().join('/')}:</div>
+          {loading && <div className="text-gray-400 mt-2">Loading schedules...</div>}
           {error && <div className="text-red-400 mt-2">{error}</div>}
           {availableTimes.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-4">
@@ -370,19 +368,19 @@ export default function Chatbot () {
                 </button>
               ))}
             </div>
-          ) : !loading && <div className="text-gray-400 mt-2">Nenhum horário disponível.</div>}
+          ) : !loading && <div className="text-gray-400 mt-2">No times available.</div>}
         </div>
       )}
 
       {step === 'confirm' && (
         <div className="space-y-4">
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Resumo do agendamento:</div>
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Scheduling Summary:</div>
           <ul className="mb-4 space-y-1 text-gray-200">
             <li><b>Nome:</b> {name}</li>
-            <li><b>Serviço:</b> {selectedService?.name}</li>
-            <li><b>Barbeiro:</b> {selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'Sem preferência'}</li>
+            <li><b>Service:</b> {selectedService?.name}</li>
+            <li><b>Barber:</b> {selectedBarber ? (selectedBarber.name || selectedBarber.user?.name) : 'No preference'}</li>
             <li><b>Data:</b> {selectedDate && selectedDate.split('-').reverse().join('/')}</li>
-            <li><b>Horário:</b> {selectedTime}</li>
+            <li><b>Time:</b> {selectedTime}</li>
           </ul>
           <button
             className="bg-[#B87333] text-gray-800 px-6 py-2 rounded-full font-bold shadow-md hover:bg-[#a66a30] transition-colors duration-200"
@@ -398,11 +396,11 @@ export default function Chatbot () {
       {step === 'success' && appointmentDetails && (
         <div className="space-y-4">
           {successMsg && <div className="mb-4 text-green-400 font-bold">{successMsg}</div>}
-          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Detalhes do agendamento:</div>
+          <div className="bg-[#4a5568] text-gray-200 rounded-lg p-3">Scheduling details:</div>
           <ul className="mb-4 space-y-1 text-gray-200">
-            <li><b>Nome:</b> {appointmentDetails.user?.name || name}</li>
-            <li><b>Serviço:</b> {appointmentDetails.services?.[0]?.name || selectedService?.name || 'Sem preferência'}</li>
-            <li><b>Barbeiro:</b> {appointmentDetails.barber?.name || selectedBarber?.name || 'Sem preferência'}</li>
+            <li><b>Name:</b> {appointmentDetails.user?.name || name}</li>
+            <li><b>Service:</b> {appointmentDetails.services?.[0]?.name || selectedService?.name || 'No preference'}</li>
+            <li><b>Barber:</b> {appointmentDetails.barber?.name || selectedBarber?.name || 'No preference'}</li>
             <li>
               <b>Data:</b>
               {
@@ -415,13 +413,12 @@ export default function Chatbot () {
                 })()
               }
             </li>
-            <li><b>Horário:</b> {appointmentDetails.startTime} - {appointmentDetails.endTime}</li>
+            <li><b>Time:</b> {appointmentDetails.startTime} - {appointmentDetails.endTime}</li>
           </ul>
-          <div className="text-gray-400 mb-4 text-sm">Você receberá um lembrete próximo ao horário do seu agendamento.</div>
+          <div className="text-gray-400 mb-4 text-sm">You will receive a reminder closer to your appointment time..</div>
           {cancelMsg && <div className="text-red-400 font-bold mt-2">{cancelMsg}</div>}
 </div>
 )}
-{/* Aqui é onde a correção é feita. A próxima div fecha a main do componente. */}
 </div>
 </div>
 );
