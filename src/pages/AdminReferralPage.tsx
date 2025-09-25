@@ -121,7 +121,7 @@ export default function AdminReferralPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
         <div className="text-red-500 font-semibold">
-          Acesso negado. Apenas administradores podem acessar esta página.
+         Access denied. Only administrators can access this page.
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ export default function AdminReferralPage() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-gray-900">
-          Gestão de Pagamentos por Indicação
+          Referral Payment Management
         </h1>
 
         {/* Resumo */}
@@ -149,7 +149,7 @@ export default function AdminReferralPage() {
               <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Total de Pagamentos</p>
+                  <p className="text-sm text-gray-600">Total Payments</p>
                   <p className="text-2xl font-bold text-gray-800">{summary.total}</p>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function AdminReferralPage() {
               <div className="flex items-center gap-3">
                 <Clock className="h-8 w-8 text-yellow-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Pendentes</p>
+                  <p className="text-sm text-gray-600">Pending</p>
                   <p className="text-2xl font-bold text-gray-800">{summary.pending}</p>
                 </div>
               </div>
@@ -169,7 +169,7 @@ export default function AdminReferralPage() {
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Pagos</p>
+                  <p className="text-sm text-gray-600">Payments</p>
                   <p className="text-2xl font-bold text-gray-800">{summary.paid}</p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function AdminReferralPage() {
               <div className="flex items-center gap-3">
                 <DollarSign className="h-8 w-8 text-purple-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Valor Pendente</p>
+                  <p className="text-sm text-gray-600">Outstanding Amount</p>
                   <p className="text-2xl font-bold text-gray-800">
                     {formatCurrency(summary.totalPendingAmount)}
                   </p>
@@ -192,7 +192,7 @@ export default function AdminReferralPage() {
         {/* Lista de Pagamentos */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">Lista de Pagamentos</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Payment List</h2>
           </div>
 
           <div className="overflow-x-auto">
@@ -200,10 +200,10 @@ export default function AdminReferralPage() {
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Usuário
+                    User
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Valor
+                    Value
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
@@ -212,10 +212,10 @@ export default function AdminReferralPage() {
                     Data
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Observações
+                    Observations
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ações
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -272,7 +272,7 @@ export default function AdminReferralPage() {
                       {payout.status === 'PENDING' && (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => updatePayoutStatus(payout.id, 'PAID', 'Pagamento realizado via PIX')}
+                            onClick={() => updatePayoutStatus(payout.id, 'PAID', 'Payment made via PIX')}
                             disabled={updating === payout.id}
                             className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition disabled:opacity-50 flex items-center gap-1"
                           >
@@ -280,25 +280,25 @@ export default function AdminReferralPage() {
                             {updating === payout.id ? 'Processando...' : 'Marcar como Pago'}
                           </button>
                           <button
-                            onClick={() => updatePayoutStatus(payout.id, 'CANCELLED', 'Pagamento cancelado')}
+                            onClick={() => updatePayoutStatus(payout.id, 'CANCELLED', 'Payment canceled')}
                             disabled={updating === payout.id}
                             className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition disabled:opacity-50 flex items-center gap-1"
                           >
                             <XCircle className="h-4 w-4" />
-                            Cancelar
+                            Cancel
                           </button>
                         </div>
                       )}
                       {payout.status === 'PAID' && (
                         <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                           <CheckCircle className="h-4 w-4" />
-                          Pago
+                          Paid
                         </span>
                       )}
                       {payout.status === 'CANCELLED' && (
                         <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
                           <XCircle className="h-4 w-4" />
-                          Cancelado
+                          Canceled
                         </span>
                       )}
                     </td>
@@ -311,7 +311,7 @@ export default function AdminReferralPage() {
           {payouts.length === 0 && (
             <div className="text-center py-12">
               <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">Nenhum pagamento encontrado.</p>
+              <p className="text-gray-500 dark:text-gray-400">No payments found.</p>
             </div>
           )}
         </div>
