@@ -105,24 +105,24 @@ export default function PersonalInformation() {
   };
 
   if (isLoading || loading) {
-    return <div>Carregando informações do usuário...</div>;
+    return <div>Loading user information...</div>;
   }
 
   if (!user) {
-    return <div>Você precisa estar logado para ver esta página.</div>;
+    return <div>You must be logged in to view this page.</div>;
   }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
-        Informações Pessoais
+        Personal Information
       </h1>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full space-y-6 flex flex-wrap justify-between">
         <div className="flex items-center gap-3">
           <CircleUser className="h-6 w-6 text-gray-500 dark:text-gray-400" />
           <div className="flex flex-col">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Nome</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Name</span>
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               {user.name}
             </span>
@@ -142,7 +142,7 @@ export default function PersonalInformation() {
         <div className="flex items-center gap-3">
           <BadgeInfo className="h-6 w-6 text-gray-500 dark:text-gray-400" />
           <div className="flex flex-col">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Função</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Function</span>
             <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               {user.role}
             </span>
@@ -153,7 +153,7 @@ export default function PersonalInformation() {
           <div className="flex items-center gap-3">
             <Phone className="h-6 w-6 text-gray-500 dark:text-gray-400" />
             <div className="flex flex-col">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Telefone</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Phone</span>
               <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                 {user.phone}
               </span>
@@ -167,7 +167,7 @@ export default function PersonalInformation() {
 
         <div className="flex flex-col flex-1">
           <label htmlFor="barber-name" className="text-lg mb-2 font-medium text-gray-700 dark:text-gray-300">
-            Nome da Barbearia
+            Barber Shop Name
           </label>
           <input
             type="text"
@@ -175,7 +175,7 @@ export default function PersonalInformation() {
             value={personalInfo.businessname || ""}
             onChange={(e) => setPersonalInfo(prev => ({ ...prev, businessname: e.target.value }))}
             className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-            placeholder="Ex: Corte Certo"
+            placeholder="Ex: Right Cut"
           />
         </div>
 
@@ -185,7 +185,7 @@ export default function PersonalInformation() {
           disabled={saving}
           className="bg-blue-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-blue-600 transition disabled:opacity-50"
         >
-          {saving ? "Salvando..." : "Salvar"}
+          {saving ? "Saving..." : "Save"}
         </button>
       </div>
 
@@ -194,14 +194,14 @@ export default function PersonalInformation() {
 
         <div className="flex flex-col flex-1">
           <label htmlFor="barber-message" className="text-lg mb-2 font-medium text-gray-700 dark:text-gray-300">
-            Mensagem Padrão WhatsApp
+            WhatsApp Standard Message
           </label>
           <textarea
             id="barber-message"
             value={personalInfo.menssage || ""}
             onChange={(e) => setPersonalInfo(prev => ({ ...prev, menssage: e.target.value }))}
             className="w-full h-20 px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-            placeholder="Crie uma mensagem padrão que os seus clientes vão receber quando enviarem mensagem para o seu whatsapp. (Não esqueça de incluir o seu link na mensagem)"
+            placeholder="Create a default message that your customers will receive when they send you a WhatsApp message. (Don't forget to include your link in the message.)"
           />
         </div>
 
@@ -211,13 +211,13 @@ export default function PersonalInformation() {
           disabled={saving}
           className="bg-blue-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-blue-600 transition disabled:opacity-50"
         >
-          {saving ? "Salvando..." : "Salvar"}
+          {saving ? "Saving..." : "Save"}
         </button>
       </div>
 
       <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mt-6">
         <label htmlFor="barber-link" className="text-lg mb-2 font-medium text-gray-700 dark:text-gray-300">
-          Link do Barbeiro
+          Barber Link
         </label>
         <div className="flex items-center gap-3 mt-2">
           <input
@@ -232,17 +232,17 @@ export default function PersonalInformation() {
             className="bg-blue-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-blue-600 transition flex items-center gap-2"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copiado!" : "Copiar"}
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
       </div>
 
       <div className="w-full bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg mt-6">
         <label htmlFor="referral-code" className="text-lg mb-2 font-medium text-gray-700 dark:text-gray-300">
-          Código de Indicação
+          Referral Code
         </label>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-          Compartilhe este código com seus amigos para ganhar descontos e receber pagamentos!
+          Share this code with your friends to get discounts and get paid!
         </p>
         <div className="flex items-center gap-3 mt-2">
           <input
@@ -263,19 +263,19 @@ export default function PersonalInformation() {
             className="bg-green-500 text-white px-3 py-2 rounded-xl font-semibold hover:bg-green-600 transition flex items-center gap-2"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copiado!" : "Copiar"}
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full mt-6">
         <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">
-          Controle de Expediente
+          Business Hours Control
         </h2>
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="flex-1">
             <label htmlFor="startWork" className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Início
+              Start
             </label>
             <input
               type="time"
@@ -287,7 +287,7 @@ export default function PersonalInformation() {
           </div>
           <div className="flex-1">
             <label htmlFor="endWork" className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Fim
+              End
             </label>
             <input
               type="time"
@@ -303,13 +303,13 @@ export default function PersonalInformation() {
             disabled={saving}
             className="bg-blue-500 text-white px-4 py-2 mt-4 md:mt-6 rounded-xl font-semibold hover:bg-blue-600 transition self-end w-full md:w-auto disabled:opacity-50"
           >
-            {saving ? "Salvando..." : "Salvar"}
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
 
         <div className="mt-4">
           <label htmlFor="workDays" className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            Dias disponíveis para agendamento
+            Days available for scheduling
           </label>
           <input
             type="number"
@@ -323,10 +323,10 @@ export default function PersonalInformation() {
 
         <div className="flex flex-col mt-4">
           <label className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-            Dias da semana disponíveis para agendamento
+            Days of the week available for scheduling
           </label>
           <div className="flex flex-wrap gap-2 sm:gap-4">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
+            {['Mon', 'Tue', 'Wen', 'Thur', 'Fri', 'Sat', 'Sun'].map((day) => (
               <div key={day} className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -359,19 +359,19 @@ export default function PersonalInformation() {
 
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full mt-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Forma de Pagamento
+          Payment Method
         </h2>
         <a
           href="/changePayment"
           className="bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-600 transition"
         >
-          Mudar Forma de Pagamento
+          Change Payment Method
         </a>
       </div>
       
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full mt-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Deletar minha conta
+          Delete my account
         </h2>
       <DeleteAccount/>
       </div>
