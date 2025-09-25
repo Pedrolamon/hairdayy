@@ -51,7 +51,7 @@ const Products = () => {
       const res = await api.get(`/products`);
       setProducts(res.data);
     } catch (e) {
-      showMessage('Erro de rede ao carregar produtos.', 'error');
+      showMessage('Network error while loading products.', 'error');
       setProducts([]);
     } finally {
       setLoadingProducts(false);
@@ -64,14 +64,14 @@ const Products = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja remover este produto?')) return;
+    if (!window.confirm('Are you sure you want to remove this product?')) return;
 
     try {
       await api.delete(`/products/${id}`);
-      showMessage('Produto removido!', 'success');
+      showMessage('Product removed!', 'success');
       fetchProducts();
     } catch {
-      showMessage('Erro de rede ao remover produto.', 'error');
+      showMessage('Network error while removing product.', 'error');
     }
   };
 
@@ -84,13 +84,13 @@ const Products = () => {
     try {
       const res = await api[method](url, payload);
       if (res.status >= 200 && res.status < 300) {
-        showMessage(editingId ? 'Produto atualizado!' : 'Produto adicionado!', 'success');
+        showMessage(editingId ? 'Product updated!' : 'Product added!', 'success');
         setForm({ active: true });
         setEditingId(null);
         fetchProducts();
       }
     } catch {
-      showMessage('Erro de rede: não foi possível conectar ao servidor.', 'error');
+      showMessage('Network error: Unable to connect to server.', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -120,7 +120,7 @@ const Products = () => {
             <input
               required
               type="text"
-              placeholder="Nome do Produto"
+              placeholder="Product Name"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.name || ''}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -130,7 +130,7 @@ const Products = () => {
               type="number"
               min={0}
               step={0.01}
-              placeholder="Preço Compra"
+              placeholder="Purchase Price"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.price || ''}
               onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
@@ -139,14 +139,14 @@ const Products = () => {
               required
               type="number"
               min={0}
-              placeholder="Quantidade"
+              placeholder="Amount"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.stock || ''}
               onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) }))}
             />
             <input
               type="text"
-              placeholder="Categoria"
+              placeholder="Category"
               className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               value={form.category || ''}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
@@ -160,7 +160,7 @@ const Products = () => {
                   onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
                   className="rounded text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm">Ativo</span>
+                <span className="text-sm">Active</span>
               </label>
             </div>
 
@@ -174,7 +174,7 @@ const Products = () => {
                     setEditingId(null);
                   }}
                 >
-                  Cancelar
+                  Cancel
                 </button>
               )}
               <button
@@ -203,22 +203,22 @@ const Products = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preço Compra</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estoque</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Estoque</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ativo</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Value</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {products.map((p) => (
                     <tr key={p.id} className={!p.active ? 'bg-gray-100 opacity-70' : 'hover:bg-gray-50 transition'}>
                       <td className="px-6 py-4 whitespace-nowrap">{p.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">R$ {Number(p.price).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">$ {Number(p.price).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.stock}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">R$ {Number(p.stockValue || 0).toFixed(2)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">$ {Number(p.stockValue || 0).toFixed(2)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.category || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{p.active ? 'Sim' : 'Não'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex gap-2">
@@ -234,7 +234,7 @@ const Products = () => {
                   {products.length === 0 && !loadingProducts && (
                     <tr>
                       <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                        Nenhum produto encontrado.
+                        No products found.
                       </td>
                     </tr>
                   )}
