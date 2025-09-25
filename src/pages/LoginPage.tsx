@@ -29,7 +29,6 @@ export default function LoginPage({ className }: LoginPageProps) {
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // TODO: remove later and add React Hook Form
     e.preventDefault();
 
     setLoading(true);
@@ -40,9 +39,13 @@ export default function LoginPage({ className }: LoginPageProps) {
 
       navigate("/dashboard")
     } catch (err) {
-      // todo
+      if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError('An unexpected error occurred.');
+    }
     } finally {
-      // todo
+      setLoading(false);
     }
   };
 
@@ -56,9 +59,9 @@ export default function LoginPage({ className }: LoginPageProps) {
             <form className="p-6 md:p-8" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">Bem-vindo de volta</h1>
+                  <h1 className="text-2xl font-bold">Welcome back</h1>
                   <p className="text-muted-foreground text-balance">
-                    Acesse sua conta 
+                    Access your account
                   </p>
                 </div>
                 {error && (
@@ -71,7 +74,7 @@ export default function LoginPage({ className }: LoginPageProps) {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@exemplo.com"
+                    placeholder="m@example.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -79,13 +82,13 @@ export default function LoginPage({ className }: LoginPageProps) {
                 </div>
                 <div className="grid gap-3">
                   <div className="flex items-center">
-                    <Label htmlFor="password">Senha</Label>
+                    <Label htmlFor="password">Password</Label>
                     <a
                       href="#"
                       className="ml-auto text-sm underline-offset-2 hover:underline"
                       onClick={(e) => e.preventDefault()} 
                     >
-                      Esqueceu sua senha?
+                      Forgot your password?
                     </a>
                   </div>
                   <Input
@@ -101,11 +104,11 @@ export default function LoginPage({ className }: LoginPageProps) {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? "Carregando..." : "Entrar"}
+                  {loading ? "Loading..." : "Enter"}
                 </Button>
                 <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                   <span className="bg-card text-muted-foreground relative z-10 px-2">
-                    Ou continue com
+                    Or continue with
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -116,7 +119,7 @@ export default function LoginPage({ className }: LoginPageProps) {
                         fill="currentColor"
                       />
                     </svg>
-                    <span className="sr-only">Login com Apple</span>
+                    <span className="sr-only">Login with Apple</span>
                   </Button>
                   <Button variant="outline" type="button" className="w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4">
@@ -125,7 +128,7 @@ export default function LoginPage({ className }: LoginPageProps) {
                         fill="currentColor"
                       />
                     </svg>
-                    <span className="sr-only">Login com Google</span>
+                    <span className="sr-only">Login with Google</span>
                   </Button>
                   <Button variant="outline" type="button" className="w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4">
@@ -134,31 +137,31 @@ export default function LoginPage({ className }: LoginPageProps) {
                         fill="currentColor"
                       />
                     </svg>
-                    <span className="sr-only">Login com Meta</span>
+                    <span className="sr-only">Login with Meta</span>
                   </Button>
                 </div>
                 <div className="text-center text-sm">
-                  Não tem uma conta?
+                 Don't have an account?
                   {" "}
                   <a href="/register" className="underline underline-offset-4">
-                    Cadastre-se
+                    Register
                   </a>
                 </div>
               </div>
             </form>
             <div className="hidden items-center justify-center md:flex">
-              <img src={LogoAparato} alt="imagem da logo da empresa" />
+              <img src={LogoAparato} alt="company logo image" />
             </div>
           </CardContent>
         </Card>
         <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-          Ao clicar em entrar, você concorda com nossos
+          By clicking enter, you agree to our
           {" "}
-          <a href="#" onClick={(e) => e.preventDefault()}>Termos de Serviço</a>
+          <a href="#" onClick={(e) => e.preventDefault()}>Terms of Service</a>
           {" "}
-          e
+          and
           {" "}
-          <a href="#" onClick={(e) => e.preventDefault()}>Política de Privacidade</a>
+          <a href="#" onClick={(e) => e.preventDefault()}>Privacy Policy</a>
           {" "}
           .
         </div>
