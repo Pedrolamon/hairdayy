@@ -76,10 +76,10 @@ export default function Dashboard () {
         params: filters, 
       });
       setData(res.data);
-      showMessage('Dashboard carregado com sucesso!', 'success');
+      showMessage('Dashboard loaded successfully!', 'success');
       
     } catch (error: any) {
-      console.error("🚨 Erro ao carregar o dashboard:", error);
+      console.error("🚨 Error loading dashboard:", error);
       showMessage(error.message, 'error');
       setData(null);
     } finally {
@@ -104,7 +104,7 @@ export default function Dashboard () {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8">
         <div className="text-red-500 font-semibold mb-4">
-          Você não está autenticado. Faça login para acessar o dashboard.
+          You are not authenticated. Please log in to access the dashboard.
         </div>
       </div>
     );
@@ -123,13 +123,13 @@ export default function Dashboard () {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8">
         <div className="text-red-500 font-semibold mb-4">
-          Ocorreu um erro ao carregar o dashboard.
+          An error occurred while loading the dashboard.
         </div>
         <button
           onClick={fetchDashboard}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
         >
-          Tentar novamente
+          Try again
         </button>
       </div>
     );
@@ -167,17 +167,17 @@ export default function Dashboard () {
       )}
 
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard de Análise</h2>
+        <h2 className="text-3xl font-bold mb-6 text-gray-900">Analysis Dashboard</h2>
 
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
             <Search className="w-6 h-6 text-gray-500" />
-            Filtros
+            Filters
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="flex flex-col">
-              <label htmlFor="startDate" className="text-sm font-medium text-gray-600 mb-1">Data inicial</label>
+              <label htmlFor="startDate" className="text-sm font-medium text-gray-600 mb-1">Start date</label>
               <input
                 id="startDate"
                 type="date"
@@ -187,7 +187,7 @@ export default function Dashboard () {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="endDate" className="text-sm font-medium text-gray-600 mb-1">Data final</label>
+              <label htmlFor="endDate" className="text-sm font-medium text-gray-600 mb-1">End date</label>
               <input
                 id="endDate"
                 type="date"
@@ -197,19 +197,19 @@ export default function Dashboard () {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="clientPeriod" className="text-sm font-medium text-gray-600 mb-1">Período de Clientes</label>
+              <label htmlFor="clientPeriod" className="text-sm font-medium text-gray-600 mb-1">Customer Period</label>
               <select
                 id="clientPeriod"
                 value={filters.clientPeriod}
                 onChange={e => setFilters(f => ({ ...f, clientPeriod: e.target.value }))}
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="current_month">Mês Atual</option>
-                <option value="last_month">Mês Anterior</option>
-                <option value="last_3_months">Últimos 3 Meses</option>
-                <option value="last_6_months">Últimos 6 Meses</option>
-                <option value="last_year">Último Ano</option>
-                <option value="all_time">Todo o Período</option>
+                <option value="current_month">Current Month</option>
+                <option value="last_month">Previous Month</option>
+                <option value="last_3_months">Last 3 Months</option>
+                <option value="last_6_months">Last 6 Months</option>
+                <option value="last_year">Last Year</option>
+                <option value="all_time">The entire period</option>
               </select>
             </div>
             <button
@@ -218,7 +218,7 @@ export default function Dashboard () {
               onClick={() => setFilters({ start: '', end: '', barberId: '', clientPeriod: 'current_month' })}
             >
               <RefreshCcw className="w-5 h-5" />
-              Limpar Filtros
+              Clear Filters
             </button>
           
           <a 
@@ -256,28 +256,28 @@ export default function Dashboard () {
             <CalendarDays className="w-10 h-10" />
                
             <div>
-              <div className="text-sm font-semibold opacity-80">Total de Agendamentos</div>
+              <div className="text-sm font-semibold opacity-80">Total Appointments</div>
               <div className="text-4xl font-bold">{data.totalAppointments}</div>
             </div>
           </div>
           <div className="bg-green-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <ShoppingCart className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Total de Vendas</div>
+              <div className="text-sm font-semibold opacity-80">Total Sales</div>
               <div className="text-4xl font-bold">{data.totalSales}</div>
             </div>
           </div>
           <div className="bg-yellow-500 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <TrendingUp className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Produtos Vendidos</div>
+              <div className="text-sm font-semibold opacity-80">Products Sold</div>
               <div className="text-4xl font-bold">{data.totalProductsSold}</div>
             </div>
           </div>
           <div className="bg-purple-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <DollarSign className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Faturamento Total</div>
+              <div className="text-sm font-semibold opacity-80">Total Revenue</div>
               <div className="text-4xl font-bold">R$ {Number(data.totalRevenue).toFixed(2)}</div>
             </div>
           </div>
@@ -286,20 +286,20 @@ export default function Dashboard () {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Agendamentos por Dia</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Appointments by Day</h3>
             <Line
               options={{
                 ...chartOptions,
                 plugins: {
                   ...chartOptions.plugins,
-                  title: { display: true, text: 'Agendamentos Diários' },
+                  title: { display: true, text: 'Daily Appointments' },
                 },
               }}
               data={{
                 labels: days,
                 datasets: [
                   {
-                    label: 'Agendamentos',
+                    label: 'Appointments',
                     data: appointmentsPerDay,
                     borderColor: '#3b82f6',
                     backgroundColor: '#dbeafe',
@@ -311,23 +311,23 @@ export default function Dashboard () {
             />
           </div>
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Vendas por Dia</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Sales per Day</h3>
             <Bar
               options={{
                 ...chartOptions,
                 plugins: {
                   ...chartOptions.plugins,
-                  title: { display: true, text: 'Vendas Diárias' },
+                  title: { display: true, text: 'Daily Sales' },
                 },
               }}
               data={{
                 labels: salesDays,
-                datasets: [{ label: 'Vendas', data: salesPerDay, backgroundColor: '#22c55e' }],
+                datasets: [{ label: 'Sales', data: salesPerDay, backgroundColor: '#22c55e' }],
               }}
             />
           </div>
           <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Serviços</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Services</h3>
             <div className="w-full h-80">
               <Pie
                 options={{
@@ -337,7 +337,7 @@ export default function Dashboard () {
                     legend: {
                       position: 'right' as const,
                     },
-                    title: { display: true, text: 'Serviços Mais Populares' },
+                    title: { display: true, text: 'Most Popular Services' },
                   },
                 }}
                 data={{
