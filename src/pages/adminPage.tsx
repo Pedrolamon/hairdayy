@@ -119,13 +119,13 @@ const AdminDashboard: React.FC = () => {
 
       const res = await api.get('/admin/dashboard', { params, signal });
       setData(res.data);
-      showMessage('Dashboard carregado com sucesso!', 'success');
+      showMessage('Dashboard loaded successfully!', 'success');
     } catch (error: any) {
       if (error?.name === 'CanceledError' || error?.message === 'canceled') {
         return;
       }
       console.error('🚨 Erro ao carregar o dashboard:', error);
-      showMessage(error?.response?.data?.message || error.message || 'Ocorreu um erro ao carregar o dashboard.', 'error');
+      showMessage(error?.response?.data?.message || error.message || 'An error occurred while loading the dashboard.', 'error');
       setData(null);
     } finally {
       setLoading(false);
@@ -141,7 +141,7 @@ const AdminDashboard: React.FC = () => {
   const handleCreateBarber = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBarberName.trim() || !newBarberEmail.trim()) {
-      showMessage('Por favor, preencha todos os campos.', 'error');
+      showMessage('Please fill in all fields.', 'error');
       return;
     }
     setActionLoading(true);
@@ -161,10 +161,10 @@ const AdminDashboard: React.FC = () => {
       await fetchAdminDashboard();
       setNewBarberName('');
       setNewBarberEmail('');
-      showMessage('Barbeiro criado com sucesso!', 'success');
+      showMessage('Barber created successfully!', 'success');
     } catch (error: any) {
       console.error('🚨 Erro ao criar o barbeiro:', error);
-      showMessage(error?.response?.data?.message || error.message || 'Ocorreu um erro ao criar o barbeiro.', 'error');
+      showMessage(error?.response?.data?.message || error.message || 'An error occurred while creating the barber.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -172,18 +172,18 @@ const AdminDashboard: React.FC = () => {
 
 
   const handleEditBarber = async (barber: Barber) => {
-    const newName = window.prompt('Novo nome do barbeiro:', barber.name);
+    const newName = window.prompt('New barber name:', barber.name);
     if (newName === null) return; 
-    const newEmail = window.prompt('Novo email do barbeiro:', barber.email);
+    const newEmail = window.prompt('New email from the barber:', barber.email);
     if (newEmail === null) return;
     setActionLoading(true);
     try {
       await api.put(`/admin/barbers/${barber.id}`, { name: newName.trim(), email: newEmail.trim() });
       await fetchAdminDashboard();
-      showMessage('Barbeiro atualizado com sucesso!', 'success');
+      showMessage('Barber updated successfully!', 'success');
     } catch (error: any) {
       console.error('Erro ao editar barbeiro:', error);
-      showMessage(error?.response?.data?.message || error.message || 'Erro ao editar barbeiro', 'error');
+      showMessage(error?.response?.data?.message || error.message || 'Error editing barber', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -191,16 +191,16 @@ const AdminDashboard: React.FC = () => {
 
 
   const handleDeleteBarber = async (barber: Barber) => {
-    const ok = window.confirm(`Deseja realmente excluir o barbeiro "${barber.name}"? Essa ação não pode ser desfeita.`);
+    const ok = window.confirm(`Do you really want to delete the barber? "${barber.name}"? This action cannot be undone.`);
     if (!ok) return;
     setActionLoading(true);
     try {
       await api.delete(`/admin/barbers/${barber.id}`);
       await fetchAdminDashboard();
-      showMessage('Barbeiro excluído com sucesso!', 'success');
+      showMessage('Barber successfully deleted!', 'success');
     } catch (error: any) {
       console.error('Erro ao excluir barbeiro:', error);
-      showMessage(error?.response?.data?.message || error.message || 'Erro ao excluir barbeiro', 'error');
+      showMessage(error?.response?.data?.message || error.message || 'Error deleting barber', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -218,7 +218,7 @@ const AdminDashboard: React.FC = () => {
   if (currentUser.role !== 'ADMIN') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8">
-        <div className="text-red-500 font-semibold mb-4">Você não está autorizado a acessar este painel.</div>
+        <div className="text-red-500 font-semibold mb-4">You are not authorized to access this panel.</div>
       </div>
     );
   }
@@ -231,7 +231,7 @@ const AdminDashboard: React.FC = () => {
           onClick={() => fetchAdminDashboard()}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
         >
-          Tentar novamente
+          Try again
         </button>
       </div>
     );
@@ -259,7 +259,7 @@ const AdminDashboard: React.FC = () => {
       )}
 
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-gray-900">Dashboard do Administrador</h2>
+        <h2 className="text-3xl font-bold mb-6 text-gray-900">Administrator Dashboard</h2>
 
         {/* Notificação em Massa */}
         <div className="mb-8">
@@ -268,16 +268,16 @@ const AdminDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Criar Novo Barbeiro</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Create New Barber</h3>
             <form onSubmit={handleCreateBarber} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
                   type="text"
                   value={newBarberName}
                   onChange={(e) => setNewBarberName(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Nome do Barbeiro"
+                  placeholder="Barber's Name"
                   required
                 />
               </div>
@@ -288,7 +288,7 @@ const AdminDashboard: React.FC = () => {
                   value={newBarberEmail}
                   onChange={(e) => setNewBarberEmail(e.target.value)}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="email@exemplo.com"
+                  placeholder="email@exemple.com"
                   required
                 />
               </div>
@@ -297,25 +297,25 @@ const AdminDashboard: React.FC = () => {
                 disabled={actionLoading}
                 className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-60"
               >
-                {actionLoading ? 'Salvando...' : 'Criar Barbeiro'}
+                {actionLoading ? 'Saving...' : 'Create Barber'}
               </button>
             </form>
 
             {newBarberCredentials && (
               <div className="mt-6 p-4 bg-green-100 text-green-700 rounded-lg border border-green-200">
-                <h4 className="font-semibold mb-2">Barbeiro criado com sucesso!</h4>
+                <h4 className="font-semibold mb-2">Barber created successfully!</h4>
                 <p>
                   ID: <strong>{newBarberCredentials.id}</strong>
                 </p>
                 <p>
-                  Senha Temporária: <strong>{newBarberCredentials.tempPassword}</strong>
+                  Temporary Password: <strong>{newBarberCredentials.tempPassword}</strong>
                 </p>
               </div>
             )}
           </div>
 
           <div>
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Meus Barbeiros</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">My Barbers</h3>
             <ul className="space-y-3">
               {data.barbers.map((barber) => (
                 <li
@@ -331,13 +331,13 @@ const AdminDashboard: React.FC = () => {
                       onClick={() => handleEditBarber(barber)}
                       className="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-300"
                     >
-                      Editar
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDeleteBarber(barber)}
                       className="text-sm bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600"
                     >
-                      Excluir
+                      Delete
                     </button>
                   </div>
                 </li>
@@ -354,7 +354,7 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="flex flex-col">
               <label htmlFor="startDate" className="text-sm font-medium text-gray-600 mb-1">
-                Data inicial
+                Start date
               </label>
               <input
                 id="startDate"
@@ -366,7 +366,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <label htmlFor="endDate" className="text-sm font-medium text-gray-600 mb-1">
-                Data final
+                End date
               </label>
               <input
                 id="endDate"
@@ -378,7 +378,7 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <label htmlFor="barberId" className="text-sm font-medium text-gray-600 mb-1">
-                Barbeiro
+                Barber
               </label>
               <select
                 id="barberId"
@@ -386,7 +386,7 @@ const AdminDashboard: React.FC = () => {
                 onChange={(e) => setFilters((f) => ({ ...f, barberId: e.target.value }))}
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">Todos</option>
+                <option value="">All</option>
                 {data.barbers.map((barber) => (
                   <option key={barber.id} value={barber.id}>
                     {barber.name}
@@ -400,7 +400,7 @@ const AdminDashboard: React.FC = () => {
               className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition flex items-center justify-center gap-2"
             >
               <RefreshCcw className="w-5 h-5" />
-              Limpar Filtros
+              Clear Filters
             </button>
           </div>
         </div>
@@ -409,28 +409,28 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-blue-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <CalendarDays className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Total de Agendamentos</div>
+              <div className="text-sm font-semibold opacity-80">Total Appointments</div>
               <div className="text-4xl font-bold">{data.totalAppointments}</div>
             </div>
           </div>
           <div className="bg-green-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <ShoppingCart className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Total de Vendas</div>
+              <div className="text-sm font-semibold opacity-80">Total Sales</div>
               <div className="text-4xl font-bold">{data.totalSales}</div>
             </div>
           </div>
           <div className="bg-yellow-500 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <TrendingUp className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Produtos Vendidos</div>
+              <div className="text-sm font-semibold opacity-80">Products Sold</div>
               <div className="text-4xl font-bold">{data.totalProductsSold}</div>
             </div>
           </div>
           <div className="bg-purple-600 text-white rounded-lg p-6 shadow-xl flex items-center gap-4">
             <DollarSign className="w-10 h-10" />
             <div>
-              <div className="text-sm font-semibold opacity-80">Faturamento Total</div>
+              <div className="text-sm font-semibold opacity-80">Total Revenue</div>
               <div className="text-4xl font-bold">{formatCurrency(data.totalRevenue)}</div>
             </div>
           </div>
@@ -438,21 +438,21 @@ const AdminDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white p-6 rounded-lg shadow-lg h-96">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Agendamentos por Dia</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Appointments by Day</h3>
             <Line
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                   legend: { position: 'top' as const },
-                  title: { display: true, text: 'Agendamentos Diários' },
+                  title: { display: true, text: 'Daily Appointments' },
                 },
               }}
               data={{
                 labels: days,
                 datasets: [
                   {
-                    label: 'Agendamentos',
+                    label: 'Appointments',
                     data: appointmentsPerDay,
                     borderColor: '#3b82f6',
                     backgroundColor: '#dbeafe',
@@ -465,25 +465,25 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-lg h-96">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Vendas por Dia</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Sales per Day</h3>
             <Bar
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                   legend: { position: 'top' as const },
-                  title: { display: true, text: 'Vendas Diárias' },
+                  title: { display: true, text: 'Daily Sales' },
                 },
               }}
               data={{
                 labels: salesDays,
-                datasets: [{ label: 'Vendas', data: salesPerDay, backgroundColor: '#22c55e' }],
+                datasets: [{ label: 'Sales', data: salesPerDay, backgroundColor: '#22c55e' }],
               }}
             />
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-lg h-96 flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Serviços</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Services</h3>
             <div className="w-full flex-grow">
               <Pie
                 options={{
@@ -491,7 +491,7 @@ const AdminDashboard: React.FC = () => {
                   maintainAspectRatio: false,
                   plugins: {
                     legend: { position: 'right' as const },
-                    title: { display: true, text: 'Serviços Mais Populares' },
+                    title: { display: true, text: 'Most Popular Services' },
                   },
                 }}
                 data={{
@@ -509,7 +509,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-lg h-96 flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Barbeiros</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800">Top Barbers</h3>
             <div className="w-full flex-grow">
               <Pie
                 options={{
