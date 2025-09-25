@@ -57,7 +57,7 @@ export default function Register()
 
     try {
      const response = await Authregister(formData)
-        setMessage({ type: 'success', text: response.message || 'Cadastro realizado com sucesso!' });
+        setMessage({ type: 'success', text: response.message || 'Registration completed successfully!' });
         setFormData({
           name: '',
           email: '',
@@ -71,7 +71,7 @@ export default function Register()
       }, 1500);
     } catch (error) {
       console.error('Erro durante o cadastro:', error);
-      setMessage({ type: 'error', text: 'Erro de rede ou servidor indisponível. Tente novamente mais tarde.' });
+      setMessage({ type: 'error', text: 'Network error or server unavailable. Please try again later..' });
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ export default function Register()
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Crie sua conta</h1>
                   <p className="text-muted-foreground text-balance">
-                    Cadastre-se para ter acesso completo
+                    Sign up for full access
                   </p>
                 </div>
                 
@@ -105,7 +105,7 @@ export default function Register()
                 )}
                 
                 <div className="grid gap-3">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="name">Name</Label>
                   <Input
                     id="name"
                     name="name"
@@ -129,7 +129,7 @@ export default function Register()
                 </div>
 
                 <div className="grid gap-3">
-                  <Label htmlFor="password">Senha</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -141,7 +141,7 @@ export default function Register()
                 </div>
 
                 <div className="grid gap-3">
-                  <Label htmlFor="role">Função</Label>
+                  <Label htmlFor="role">Role</Label>
                   <select
                     id="role"
                     name="role"
@@ -149,14 +149,14 @@ export default function Register()
                     onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="barber">Barbeiro</option>
-                    <option value="client">Cliente</option>
-                    <option value="ADMIN">Administrador</option>
+                    <option value="barber">Barber</option>
+                    <option value="client">Client</option>
+                    <option value="ADMIN">Administrator</option>
                   </select>
                 </div>
 
                 <div className="grid gap-3">
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="phone">Phone</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -167,7 +167,7 @@ export default function Register()
                 </div>
                  
                 <div className="grid gap-3">
-                <Label htmlFor="referralCode">Código de Indicação (opcional)</Label>
+                <Label htmlFor="referralCode">Referral Code (optional)</Label>
                 <Input
                   id="referralCode"
                   name="referralCode"
@@ -182,14 +182,14 @@ export default function Register()
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? 'Cadastrando...' : 'Cadastrar'}
+                  {loading ? 'Registering...' : 'Register'}
                 </Button>
                 
                 <div className="text-center text-sm">
-                  Já tem uma conta?
+                  Already have an account?
                   {" "}
                   <a href="/login" className="underline underline-offset-4">
-                    Entrar
+                    Enter
                   </a>
                 </div>
               </form>
