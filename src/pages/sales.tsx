@@ -51,7 +51,7 @@ const Sales = () => {
       const res = await api.get(`/products`);
       setProducts(res.data);
     } catch (e) {
-      showMessage('Erro de rede ao carregar produtos.', 'error');
+      showMessage('Network error while loading products.', 'error');
       setProducts([]);
     }
   };
@@ -62,7 +62,7 @@ const Sales = () => {
       const res = await api.get(`/sales`);
       setSales(res.data);
     } catch (e) {
-      showMessage('Erro de rede ao carregar vendas.', 'error');
+      showMessage('Network error loading sales.', 'error');
       setSales([]);
     } finally {
       setLoadingSales(false);
@@ -80,7 +80,7 @@ const Sales = () => {
   const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saleForm.items.length === 0) {
-      return showMessage('Selecione ao menos um produto.', 'error');
+      return showMessage('Select at least one product.', 'error');
     }
 
     setSaleLoading(true);
@@ -102,12 +102,12 @@ const Sales = () => {
 
     try {
       await api.post('/sales', payload);
-      showMessage('Venda registrada!', 'success');
+      showMessage('Registered sale!', 'success');
       setSaleForm({ clientName: '', items: [] });
       fetchProducts();
       fetchSales();
     } catch {
-      showMessage('Erro de rede: não foi possível conectar ao servidor.', 'error');
+      showMessage('Network error: Could not connect to the server.', 'error');
     } finally {
       setSaleLoading(false);
     }
@@ -130,14 +130,14 @@ const Sales = () => {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h3 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2">
             <ShoppingCart className="w-8 h-8" />
-            Registrar Venda
+            Register Sale
           </h3>
 
           <form onSubmit={handleSaleSubmit} className="grid grid-cols-1 gap-6 mb-6">
             <div className="flex flex-col md:flex-row gap-4">
               <input
                 type="text"
-                placeholder="Nome do Cliente (opcional)"
+                placeholder="Customer Name (optional)"
                 className="flex-1 border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 value={saleForm.clientName}
                 onChange={(e) => setSaleForm((f) => ({ ...f, clientName: e.target.value }))}
@@ -149,7 +149,7 @@ const Sales = () => {
                 .map((p) => (
                   <div key={p.id} className="flex flex-col gap-1 items-start">
                     <span className="font-semibold text-sm">{p.name}</span>
-                    <span className="text-xs text-gray-600">Estoque: {p.stock}</span>
+                    <span className="text-xs text-gray-600">Stock: {p.stock}</span>
                     <input
                       type="number"
                       min={0}
@@ -173,13 +173,13 @@ const Sales = () => {
               ) : (
                 <>
                   <ShoppingCart className="w-5 h-5" />
-                  Registrar Venda
+                  Register Sale
                 </>
               )}
             </button>
           </form>
 
-          <h3 className="text-2xl font-bold mb-4 mt-8 text-gray-900">Histórico de Vendas</h3>
+          <h3 className="text-2xl font-bold mb-4 mt-8 text-gray-900">Sales History</h3>
           <div className="overflow-x-auto rounded-lg shadow-inner border border-gray-200">
             {loadingSales ? (
               <div className="flex justify-center p-8">
@@ -190,8 +190,8 @@ const Sales = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produtos</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                   </tr>
                 </thead>
@@ -209,7 +209,7 @@ const Sales = () => {
                   {sales.length === 0 && !loadingSales && (
                     <tr>
                       <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                        Nenhuma venda encontrada.
+                        No sales found.
                       </td>
                     </tr>
                   )}
