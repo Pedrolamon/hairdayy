@@ -48,6 +48,7 @@ model User {
   password           String
   role               UserRole             @default(CLIENT)
   phone              String?
+  lastGreetingDate   DateTime?
   notes              String?
   isBlocked          Boolean              @default(false)
   createdAt          DateTime             @default(now())
@@ -156,6 +157,8 @@ model Appointment {
   services        AppointmentService[]
   serviceToken    String?
   financialRecord FinancialRecord?
+  notified        Boolean              @default(false)
+  Notification    Notification[]
 }
 
 model AppointmentService {
@@ -179,19 +182,21 @@ model SaleProduct {
 }
 
 model Notification {
-  id     String   @id @default(uuid())
-  userId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title  String
-  body   String
-  date   DateTime @default(now())
-  read   Boolean  @default(false)
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  body          String
+  date          DateTime     @default(now())
+  read          Boolean      @default(false)
+  appointmentId String?      @unique
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
 }
 
 model PersonalInformation {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String  @id @default(uuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessname  String?
   daysworked    String?
   menssage      String?
@@ -200,8 +205,9 @@ model PersonalInformation {
   workDays      Int?
   availableDays Json?
   paymentMethod String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subscription {

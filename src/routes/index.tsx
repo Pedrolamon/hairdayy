@@ -24,6 +24,7 @@ import AdminDashboard from "../pages/adminPage";
 import AppointmentActions from "../pages/clientappointments";
 import Payment from "../pages/payment";
 import AdminReferralPage from "../pages/AdminReferralPage";
+import Sales from "../pages/sales";
 
 
 const publicRoutes = [
@@ -98,7 +99,10 @@ const authRoutes = [
     path: "/admin-referrals",
     element: <AdminReferralPage/>
   },
-  
+  {
+    path: "/sale",
+    element: <Sales/>
+  },
 
 ] as const;
 

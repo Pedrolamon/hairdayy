@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
-import { MenuIcon, Home, Calendar, Users, DollarSign, Box, Scissors,FileClock, LogOut,UserLock,UserStar,BellDot } from "lucide-react";
+import { MenuIcon, Home, Calendar, Users, DollarSign, Box, Scissors,FileClock, LogOut,UserLock,ShoppingBag,BellDot } from "lucide-react";
 import { useAuth } from "../../hooks/use-auth"
 
 
@@ -87,7 +87,7 @@ export function Layout({ children }: LayoutProps) {
     { href: "/services", label: "Serviços", icon: Scissors },
     {href: "/availability", label: "Disponibilidade", icon: FileClock},
     {href: "/Info", label: "Info pessoal", icon: UserLock},
-    {href: "/AdmPage", label: "Painel administrativo", icon: UserStar},
+    {href: "/sale", label: "Vendas", icon: ShoppingBag},
     {href: "/Notification", label: "Notificações", icon: BellDot},
     
 

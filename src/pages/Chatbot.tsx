@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { getPersonalInformation, getBusinessName, getAvailableDates } from '../api/personalInformation';
 import type { AvailableDate } from '../api/personalInformation';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc'; // Importa o plugin UTC
+import timezone from 'dayjs/plugin/timezone'; // Importa o plugin Timezone
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const TZ = 'America/Sao_Paulo'; 
 
 
 const getGreeting = () => {
@@ -395,7 +403,18 @@ export default function Chatbot () {
             <li><b>Nome:</b> {appointmentDetails.user?.name || name}</li>
             <li><b>Serviço:</b> {appointmentDetails.services?.[0]?.name || selectedService?.name || 'Sem preferência'}</li>
             <li><b>Barbeiro:</b> {appointmentDetails.barber?.name || selectedBarber?.name || 'Sem preferência'}</li>
-            <li><b>Data:</b> {appointmentDetails.date ? new Date(appointmentDetails.date).toLocaleDateString('pt-BR') : ''}</li>
+            <li>
+              <b>Data:</b>
+              {
+                (() => {
+                  const dateString = appointmentDetails.date.split('T')[0];
+                  const [year, month, day] = dateString.split('-');
+                  const displayDate = `${day}/${month}/${year}`;
+                  console.log("Data para exibição (corrigida):", displayDate);
+                  return displayDate;
+                })()
+              }
+            </li>
             <li><b>Horário:</b> {appointmentDetails.startTime} - {appointmentDetails.endTime}</li>
           </ul>
           <div className="text-gray-400 mb-4 text-sm">Você receberá um lembrete próximo ao horário do seu agendamento.</div>

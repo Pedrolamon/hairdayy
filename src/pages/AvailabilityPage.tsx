@@ -19,6 +19,14 @@ export default function Availability () {
   const [formSuccess, setFormSuccess] = useState('');
   const dateInputRef = useRef<HTMLInputElement>(null);
 
+  const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Mês começa do 0
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
   useEffect(() => {
     fetchBlocks();
   }, []);
@@ -145,7 +153,7 @@ export default function Availability () {
             <li key={block.id} className="bg-gray-50 p-4 rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-gray-200">
               <div className="flex-1">
                 <p className="font-semibold text-gray-900 text-lg">
-                  {block.date}
+                  {formatDate(block.date)}
                 </p>
                 <p className="text-gray-600 text-sm mt-1">
                   {block.startTime} - {block.endTime}

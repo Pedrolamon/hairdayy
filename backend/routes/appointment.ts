@@ -46,8 +46,8 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
     // 🔹 Filtro por data
     if (date) {
       const localDate = dayjs.tz(String(date), TZ);
-      const startOfDay = localDate.add(1, 'day').startOf('day').utc().toDate();
-      const endOfDay = localDate.add(1, 'day').endOf('day').utc().toDate();
+      const startOfDay = localDate.startOf('day').utc().toDate();
+      const endOfDay = localDate.endOf('day').utc().toDate();
 
       where.date = { gte: startOfDay, lt: endOfDay };
     } else if (period && period !== 'all') {
@@ -57,8 +57,8 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res: Response) => {
 
       switch (period) {
         case 'today':
-          startDate = now.add(1, 'day').startOf('day').utc().toDate();
-          endDate = now.add(1, 'day').endOf('day').utc().toDate();
+          startDate = now.startOf('day').toDate();
+          endDate = now.endOf('day').toDate();;
           break;
         case 'week':
           const dayOfWeek = now.day();
@@ -183,7 +183,7 @@ router.get("/count", authenticateJWT, async (req: AuthRequest, res: Response) =>
     switch (period) {
       case 'day':
         startDate = now.startOf('day').toDate();
-        endDate = now.add(1, 'day').startOf('day').toDate();
+        endDate = now.endOf('day').toDate();
         break;
       case 'week':
         startDate = now.startOf('week').toDate();
@@ -301,7 +301,7 @@ router.post("/", authenticateJWT, async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: "Um ou mais serviços inválidos." });
     }
 
-    const appointmentDate = dayjs.tz(date, TZ).startOf('day').toDate();
+    const appointmentDate = dayjs(date).startOf('day').toDate();
 
     const appointment = await prisma.appointment.create({
       data: {
@@ -340,89 +340,127 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { date, startTime, endTime, status, serviceIds, barberId } = req.body;
   
+   // 1. Log inicial: Dados recebidos na requisição
+    console.log("------------------- INÍCIO DA REQUISIÇÃO PUT -------------------");
+    console.log(`Recebida requisição PUT para agendamento com ID: ${id}`);
+    console.log("Corpo da requisição:", req.body);
+
   try {
     const existingAppointment = await prisma.appointment.findUnique({
       where: { id },
       include: { services: { include: { service: true } } },
     });
     if (!existingAppointment) {
+      console.log(`Erro: Agendamento com ID ${id} não encontrado.`);
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
+    console.log("Agendamento existente encontrado:", existingAppointment);
 
     const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { barber: true } });
     if (!user || !user.barber || user.barber.id !== existingAppointment.barberId) { 
+      console.log(`Erro: Acesso negado para o usuário ${req.userId} no agendamento ${id}.`);
       return res.status(403).json({ message: "Acesso negado. Você não tem permissão para atualizar este agendamento." });
     }
 
     const updateData: Prisma.AppointmentUpdateInput = {};
 
     if (date) {
+      console.log(`Atualizando data para: ${updateData.date}`);
       updateData.date = dayjs.tz(date, TZ).startOf('day').toDate();
     }
     if (startTime) updateData.startTime = startTime;
+     console.log(`Atualizando horário de início para: ${updateData.startTime}`);
     if (endTime) updateData.endTime = endTime;
+    console.log(`Atualizando horário de término para: ${updateData.endTime}`);
+    
 
     let statusChangedToCompleted = false;
     let statusChangedToCancelled = false;
 
     if (status && status !== existingAppointment.status) {
       const newStatus = status as AppointmentStatus; 
-      if (newStatus === AppointmentStatus.COMPLETED) statusChangedToCompleted = true;
-      if (newStatus === AppointmentStatus.CANCELLED) statusChangedToCancelled = true;
+      if (newStatus === AppointmentStatus.COMPLETED){ statusChangedToCompleted = true;
+        updateData.status = newStatus;
+        console.log("Status alterado para: COMPLETED");}
+      if (newStatus === AppointmentStatus.CANCELLED) {statusChangedToCancelled = true;
+        updateData.status = newStatus;
+       console.log("Status alterado para: CANCELLED");
       updateData.status = newStatus;
+      }
     }
 
-    if (serviceIds && Array.isArray(serviceIds)) {
-      await prisma.appointmentService.deleteMany({ where: { appointmentId: id } });
-      updateData.services = {
-        create: serviceIds.map((s: string) => ({
-          service: { connect: { id: s } }
-        }))
-      };
-    }
+    if (serviceIds !== undefined && Array.isArray(serviceIds)) {
+       console.log("Atualizando serviços. Deletando serviços antigos...");
+    await prisma.appointmentService.deleteMany({ where: { appointmentId: id } });
+    console.log("Serviços antigos deletados. Criando novos...");
+    updateData.services = {
+      create: serviceIds.map((s: string) => ({
+        service: { connect: { id: s } }
+      }))
+    };
+    console.log("Novos serviços prontos para criação.");
+  }
 
     if (barberId) {
       const barber = await prisma.barber.findUnique({ where: { id: barberId } });
       if (!barber) {
+        console.log("Erro: Barbeiro não encontrado.");
         return res.status(400).json({ message: "Barbeiro não encontrado." });
       }
       updateData.barber = { connect: { id: barberId } };
+      console.log(`Atualizando barbeiro para: ${barberId}`);
     }
     
+    console.log("Dados finais para o update:", updateData);
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
       data: updateData,
       include: { services: { include: { service: true } } },
     });
-
+    console.log("Agendamento atualizado com sucesso:", updatedAppointment);
     if (statusChangedToCompleted) {
+      console.log("Iniciando a lógica para status 'COMPLETED'...");
       const services = existingAppointment.services.map((s: AppointmentService & { service: Service }) => s.service);
       const total = services.reduce((sum: number, s: Service) => sum + Number(s.price), 0);
+       console.log(`Total calculado: ${total}`)
 
+       const barber = await prisma.barber.findUnique({
+    where: { id: updatedAppointment.barberId },
+    select: { userId: true },
+      });
+
+      if (!barber) {
+      console.error("Erro: não foi possível encontrar o barbeiro para vincular ao usuário.");
+      return res.status(400).json({ message: "Barbeiro não encontrado para vínculo financeiro." });
+      }
+    
+       console.log("Tentando criar o registro financeiro...");
       await prisma.financialRecord.create({
         data: {
           type: "income",
-          amount: new Prisma.Decimal(total),
+          amount: total,
           description: `Receita de agendamento #${updatedAppointment.id}`,
           date: updatedAppointment.date,
           category: "Serviço",
-          userId: updatedAppointment.barberId,
+          userId: barber.userId,
           appointmentId: updatedAppointment.id,
         },
-      });
+      });console.log("Registro financeiro criado.");
 
+      console.log("Tentando enviar a notificação 'Completed'...");
       await notifyAppointmentCompleted(
         updatedAppointment.id,
         updatedAppointment.barberId,
         updatedAppointment.clientName || 'Cliente',
         total
-      );
+      );console.log("Notificação 'Completed' enviada com sucesso.");
     }
 
     if (statusChangedToCancelled) {
+      console.log("Iniciando a lógica para status 'CANCELLED'...");
       await prisma.financialRecord.deleteMany({
         where: { appointmentId: updatedAppointment.id, type: "income" },
-      });
+      });console.log("Registros financeiros de agendamento cancelado removidos.");
 
       await notifyAppointmentCancelled(
         updatedAppointment.id,
@@ -431,23 +469,28 @@ router.put("/:id", authenticateJWT, async (req: AuthRequest, res: Response) => {
         updatedAppointment.date,
         updatedAppointment.startTime
       );
+      console.log("Notificação 'Cancelled' enviada com sucesso.");
     }
 
     if (!statusChangedToCompleted && !statusChangedToCancelled) {
+      console.log("Iniciando a lógica para atualização padrão...");
       await notifyAppointmentUpdated(
         updatedAppointment.id,
         updatedAppointment.barberId,
         updatedAppointment.clientName || 'Cliente',
         updatedAppointment.date,
         updatedAppointment.startTime
-      );
+      );console.log("Notificação 'Updated' enviada com sucesso.");
     }
 
     res.json(updatedAppointment);
+    console.log("------------------- FIM DA REQUISIÇÃO PUT -------------------");
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
+      console.error("ERRO na requisição PUT:", error);
       return res.status(404).json({ message: "Agendamento não encontrado." });
     }
+    console.log("------------------- FIM DA REQUISIÇÃO PUT (COM ERRO) -------------------");
     res.status(500).json({ error: "Erro ao atualizar agendamento." });
   }
 });

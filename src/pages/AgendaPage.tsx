@@ -584,7 +584,7 @@ interface EditAppointmentForm {
               <tbody>
                 {appointments.map(app => (
                   <tr key={app.id} className="border-t hover:bg-gray-50 transition duration-150">
-                    <td className="py-3 px-4 text-sm text-gray-800">{new Date(app.date).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 text-sm text-gray-800">{app.date.split('T')[0].split('-').reverse().join('/')}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{app.startTime} - {app.endTime}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{app.clientName || app.client?.name}</td>
                     <td className="py-3 px-4 text-sm text-gray-800">{app.services.map(s => s.service.name).join(', ')}</td>
@@ -674,7 +674,7 @@ interface EditAppointmentForm {
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <p className="flex items-center text-sm text-gray-700"><Users size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Cliente:</span> {selectedAppointment.clientName || selectedAppointment.client?.name}</p>
-                  <p className="flex items-center text-sm text-gray-700"><Calendar size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Data:</span> {new Date(selectedAppointment.date).toLocaleDateString()}</p>
+                  <p className="flex items-center text-sm text-gray-700"><Calendar size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Data:</span> {selectedAppointment.date.split('T')[0].split('-').reverse().join('/')}</p>
                   <p className="flex items-center text-sm text-gray-700"><Clock size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Horário:</span> {selectedAppointment.startTime} - {selectedAppointment.endTime}</p>
                   <p className="flex items-center text-sm text-gray-700"><Tag size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Serviços:</span> {selectedAppointment.services.map(s => s.service.name).join(', ')}</p>
                 </div>

@@ -96,6 +96,17 @@ router.post('/send', authenticateJWT, async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Erro ao enviar notificação', details: errorMessage });
   }
 });
+// Excluir todas
+router.delete('/history/delete-all', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
+  console.log('Rota de exclusão de todas as notificações acessada!');
+  if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
+  try {
+    await prisma.notification.deleteMany({ where: { userId: req.userId } });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Erro ao excluir todas as notificações.' });
+  }
+});
 
 
 // VAPID key pública
@@ -161,16 +172,7 @@ router.put('/history/mark-all-read', authenticateJWT, async (req: Request & { us
   }
 });
 
-// Excluir todas
-router.delete('/history/delete-all', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
-  if (!req.userId) return res.status(401).json({ error: 'Não autenticado' });
-  try {
-    await prisma.notification.deleteMany({ where: { userId: req.userId } });
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ error: 'Erro ao excluir todas as notificações.' });
-  }
-});
+
 
 // Broadcast (apenas admin)
 router.post('/broadcast', authenticateJWT, async (req: Request & { userId?: string }, res: Response) => {
@@ -204,46 +206,69 @@ router.post('/broadcast', authenticateJWT, async (req: Request & { userId?: stri
 
 // ---------------- CRONS ----------------
 cron.schedule('*/1 * * * *', async () => {
-  console.log('Verificando novos agendamentos...');
-  try {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  console.log('Verificando novos agendamentos não notificados...');
+  try {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    const newAppointments = await prisma.appointment.findMany({
-      where: { createdAt: { gte: fiveMinutesAgo } },
-      include: { barber: true }, // Mantenha o include para ter acesso ao userId do barbeiro
-    });
-    console.log(`Encontrados ${newAppointments.length} novos agendamentos.`);
+    const newAppointments = await prisma.appointment.findMany({
+      where: { 
+        createdAt: { gte: fiveMinutesAgo },
+        notified: false // Usa o campo para controle do cron
+      },
+      include: { barber: true },
+    });
 
-    for (const appointment of newAppointments) {
-      // 💡 MUDANÇA AQUI: Obtém o userId a partir do barbeiro relacionado
-      const barberUserId = appointment.barber.userId;
-      
-      // Usa o barberUserId para buscar a subscription
-      const barberSubscriptionRecord = await prisma.pushSubscription.findUnique({
-        where: { userId: barberUserId },
-      });
+    for (const appointment of newAppointments) {
+      const barberUserId = appointment.barber.userId;
+      const barberSubscriptionRecord = await prisma.pushSubscription.findUnique({
+        where: { userId: barberUserId },
+      });
+      const barberSubscription = barberSubscriptionRecord?.subscription;
 
-      const barberSubscription = barberSubscriptionRecord?.subscription;
+      if (barberSubscription) {
+        const title = 'Novo Agendamento!';
+        const body = `O cliente ${appointment.clientName || 'anônimo'} agendou um serviço para ${appointment.date.toLocaleDateString('pt-BR')} às ${appointment.startTime}.`;
 
-      if (barberSubscription) {
-        console.log(`✅ Subscription encontrada para o barbeiro ${barberUserId}`);
-        const title = 'Novo Agendamento!';
-        const body = `O cliente ${appointment.clientName || 'anônimo'} agendou um serviço para ${appointment.date.toLocaleDateString('pt-BR')}.`;
+        // 🚀 MUDANÇA APRIMORADA: Tenta criar a notificação e lida com o erro se ela já existir
+        try {
+          await prisma.notification.create({
+            data: {
+              userId: barberUserId,
+              title: title,
+              body: body,
+              appointmentId: appointment.id, // Associa a notificação ao agendamento
+            },
+          });
 
-       await webpush.sendNotification(
-          barberSubscription as unknown as webpush.PushSubscription,
-          JSON.stringify({ title, body })
-        );
-        
-        await saveNotification(barberUserId, title, body);
-        console.log(`Notificação enviada para o barbeiro ${barberUserId}`);
-      } else {
-        console.log(`❌ Subscription NÃO encontrada para o barbeiro ${barberUserId}`);
-      }
-    }
-  } catch (error) {
-    console.error('Erro na verificação de agendamentos:', error);
-  }
+          await webpush.sendNotification(
+            barberSubscription as unknown as webpush.PushSubscription,
+            JSON.stringify({ title, body })
+          );
+
+          // Atualiza o agendamento para evitar processamento futuro
+          await prisma.appointment.update({
+            where: { id: appointment.id },
+            data: { notified: true },
+          });
+
+          console.log(`Notificação enviada e agendamento marcado como notificado para o barbeiro ${barberUserId}`);
+
+        } catch (e: any) {
+          if (e.code === 'P2002' && e.meta?.target.includes('appointmentId')) {
+            // Notificação já existe, não faz nada
+            console.log(`Notificação para o agendamento ${appointment.id} já existe. Pulando.`);
+          } else {
+            // Erro diferente
+            console.error('Erro ao criar notificação:', e);
+          }
+        }
+      } else {
+        console.log(`❌ Subscription NÃO encontrada para o barbeiro ${barberUserId}`);
+      }
+    }
+  } catch (error) {
+    console.error('Erro na verificação de agendamentos:', error);
+  }
 });
 
 cron.schedule('0 * * * *', async () => {

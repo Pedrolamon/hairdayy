@@ -4,6 +4,13 @@ import { AuthRequest } from "../middleware/auth";
 import { pushSubscriptions } from './notification';
 import webpush from 'web-push';
 import { Prisma, Service, AppointmentService, Appointment, AppointmentStatus } from '@prisma/client';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const TZ = process.env.TIMEZONE || 'America/Sao_Paulo';
 
 
 const router = Router();
@@ -101,13 +108,19 @@ router.get("/open", async (req: Request, res: Response) => {
 
     // Buscar agendamentos e bloqueios
     const [appointments, blockedBlocks] = await Promise.all([
-      prisma.appointment.findMany({
-        where: { barberId: barberId as string, date: new Date(String(date)) },
-      }),
-      prisma.availabilityBlock.findMany({
-        where: { barberId: barberId as string, date: new Date(String(date)) },
-      }),
-    ]);
+  prisma.appointment.findMany({
+    where: { 
+      barberId: barberId as string, 
+      date: dayjs(date as string).tz(TZ).startOf('day').toDate()
+    },
+  }),
+  prisma.availabilityBlock.findMany({
+    where: { 
+      barberId: barberId as string, 
+      date: dayjs(date as string).tz(TZ).startOf('day').toDate()
+    },
+  }),
+]);
     console.log('Agendamentos encontrados:', appointments);
     console.log('Bloqueios encontrados:', blockedBlocks);
 
@@ -291,8 +304,8 @@ router.get("/:id", async (req: Request, res: Response) => {
 // Rota para criar um novo agendamento
 router.post("/", async (req: Request, res: Response) => { 
     const { date, startTime, endTime, serviceIds, clientName, phone, barberId, clientId } = req.body;
-    
 
+    console.log("1. Dados recebidos da requisição:", { date, startTime, endTime });
 
     if (!date || !startTime || !endTime || !serviceIds || !Array.isArray(serviceIds) || !barberId) {
         return res.status(400).json({ message: "Dados obrigatórios: date, startTime, endTime, serviceIds, barberId." });
@@ -313,10 +326,12 @@ router.post("/", async (req: Request, res: Response) => {
         if (services.length !== serviceIds.length) {
             return res.status(400).json({ message: "Um ou mais serviços inválidos." });
         }
+        const appointmentDate = dayjs.tz(date as string, TZ).startOf('day').toDate();
 
+        console.log("2. Data convertida para fuso horário local:", appointmentDate);
         const appointment = await prisma.appointment.create({
             data: {
-                date: new Date(date),
+                date: appointmentDate,
                 startTime,
                 endTime,
                 status: AppointmentStatus.SCHEDULED, 
@@ -340,7 +355,7 @@ router.post("/", async (req: Request, res: Response) => {
                 }
             }
         });
-
+        console.log("Resposta da API para o Frontend:", appointment);
         const user = await prisma.user.findUnique({ 
           where: { id: barber.userId } 
         });
