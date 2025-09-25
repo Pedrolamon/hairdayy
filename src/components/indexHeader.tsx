@@ -12,7 +12,7 @@ export function IndexHeader() {
         <a href="/" className="flex items-center">
           <img
             src={LogoAparato}
-            alt="Logo da marca Aparato"
+            alt="Apparatus brand logo"
             className="h-10 mr-2"
           />
           <span className="font-bold text-xl text-[#36454F]">Aparato</span>
@@ -23,19 +23,19 @@ export function IndexHeader() {
             href="#recursos"
             className="text-[#36454F] hover:text-[#B87333] transition-colors"
           >
-            Recursos
+            Resources
           </a>
           <a
             href="#planos"
             className="text-[#36454F] hover:text-[#B87333] transition-colors"
           >
-            Preços
+            Prices
           </a>
           <a
             href="#sobre"
             className="text-[#36454F] hover:text-[#B87333] transition-colors"
           >
-            Sobre nós
+            About us
           </a>
 
           <div className="pl-6 flex items-center space-x-4">
@@ -43,13 +43,13 @@ export function IndexHeader() {
               href="/login"
               className="text-[#36454F] hover:text-[#B87333] font-medium"
             >
-              Entrar
+              Login
             </a>
             <a
               href="/register"
               className="bg-[#B87333] text-white py-2 px-4 rounded-md font-medium hover:bg-[#a66a30] shadow-md transition-transform transform hover:scale-105"
             >
-              Teste Grátis
+              Free Trial
             </a>
           </div>
         </nav>
@@ -96,35 +96,35 @@ export function IndexHeader() {
               className="text-[#36454F] hover:text-[#B87333]"
               onClick={() => setMenuOpen(false)}
             >
-              Recursos
+              Resources
             </a>
             <a
               href="#planos"
               className="text-[#36454F] hover:text-[#B87333]"
               onClick={() => setMenuOpen(false)}
             >
-              Preços
+              Prices
             </a>
             <a
               href="#sobre"
               className="text-[#36454F] hover:text-[#B87333]"
               onClick={() => setMenuOpen(false)}
             >
-              Sobre nós
+              About us
             </a>
             <a
               href="/login"
               className="text-[#36454F] hover:text-[#B87333]"
               onClick={() => setMenuOpen(false)}
             >
-              Entrar
+              Login
             </a>
             <a
               href="/register"
               className="bg-[#B87333] text-white py-2 px-4 rounded-md font-medium hover:bg-[#a66a30] shadow-md"
               onClick={() => setMenuOpen(false)}
             >
-              Teste Grátis
+              Free Trial
             </a>
           </nav>
         </div>
