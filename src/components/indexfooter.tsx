@@ -9,7 +9,7 @@ export function IndexFooter(){
           <div>
             <h3 className="text-white font-bold text-2xl mb-4">Aparato</h3>
             <p className="text-sm text-gray-400">
-              Tecnologia simples para gestão de barbearias.
+              Simple technology for barbershop management.
             </p>
           </div>
 
@@ -17,24 +17,24 @@ export function IndexFooter(){
           <div>
             <h4 className="text-white font-semibold mb-4">Links</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#recursos" className="hover:underline">Recursos</a></li>
-              <li><a href="#planos" className="hover:underline">Plano</a></li>
-              <li><a href="#sobre" className="hover:underline">Sobre Nós</a></li>
-              <li><a href="/login" className="hover:underline">Entrar</a></li>
+              <li><a href="#recursos" className="hover:underline">Resources</a></li>
+              <li><a href="#planos" className="hover:underline">Plan</a></li>
+              <li><a href="#sobre" className="hover:underline">About Us</a></li>
+              <li><a href="/login" className="hover:underline">Login</a></li>
             </ul>
           </div>
 
           {/* Contato */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Contato</h4>
+            <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
-              <li>Email: suporte@aparato.com</li>
-              <li>WhatsApp: (21) 99999-9999</li>
+              <li>Email: Contact@twotrails.com</li>
+              <li>WhatsApp: (24) 99225-4110</li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-semibold mb-4">Siga-nos</h4>
+            <h4 className="text-white font-semibold mb-4">Follow us</h4>
             <div className="flex gap-4">
               <a href="#" className="hover:text-white">Facebook</a>
               <a href="#" className="hover:text-white">Instagram</a>
@@ -44,7 +44,7 @@ export function IndexFooter(){
         </div>
 
         <div className="text-center text-sm text-gray-500 mt-10 border-t border-gray-700 pt-4">
-          © {new Date().getFullYear()} Aparato — Todos os direitos reservados.
+          © {new Date().getFullYear()} Apparatus — All rights reserved.
         </div>
         </footer>
 )
