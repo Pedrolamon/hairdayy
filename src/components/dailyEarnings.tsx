@@ -125,21 +125,21 @@ export default function AgendaInfoCards() {
           <CalendarClock className="text-blue-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{dailyCount}</h3>
-            <p className="text-sm text-gray-600">Agendamentos Hoje</p>
+            <p className="text-sm text-gray-600">Appointments Today</p>
           </div>
         </div>
         <div className="flex-1 bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200 flex items-center gap-4">
           <CalendarDays className="text-blue-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{weeklyCount}</h3>
-            <p className="text-sm text-gray-600">Agendamentos Semana</p>
+            <p className="text-sm text-gray-600">Weekly Appointments</p>
           </div>
         </div>
         <div className="flex-1 bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200 flex items-center gap-4">
           <BarChart className="text-blue-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{monthlyCount}</h3>
-            <p className="text-sm text-gray-600">Agendamentos Mês</p>
+            <p className="text-sm text-gray-600">Monthly Appointments</p>
           </div>
         </div>
       </div>
@@ -150,21 +150,21 @@ export default function AgendaInfoCards() {
           <DollarSign className="text-green-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{formatCurrency(dailyProfit)}</h3>
-            <p className="text-sm text-gray-600">Lucro Hoje</p>
+            <p className="text-sm text-gray-600">Profit Today</p>
           </div>
         </div>
         <div className="flex-1 bg-green-50 p-6 rounded-lg shadow-sm border border-green-200 flex items-center gap-4">
           <DollarSign className="text-green-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{formatCurrency(weeklyProfit)}</h3>
-            <p className="text-sm text-gray-600">Lucro Semana</p>
+            <p className="text-sm text-gray-600">Weekly Profit</p>
           </div>
         </div>
         <div className="flex-1 bg-green-50 p-6 rounded-lg shadow-sm border border-green-200 flex items-center gap-4">
           <DollarSign className="text-green-600 h-8 w-8"/>
           <div>
             <h3 className="text-xl font-semibold text-gray-800">{formatCurrency(monthlyProfit)}</h3>
-            <p className="text-sm text-gray-600">Lucro Mês</p>
+            <p className="text-sm text-gray-600">Monthly Profit</p>
           </div>
         </div>
       </div>
