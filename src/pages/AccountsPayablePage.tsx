@@ -111,13 +111,13 @@ export default function FinancialCalendar() {
           </button>
         </div>
         <div className="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-2">
-          <div>Dom</div>
-          <div>Seg</div>
-          <div>Ter</div>
-          <div>Qua</div>
-          <div>Qui</div>
-          <div>Sex</div>
-          <div>Sáb</div>
+          <div>Mon</div>
+          <div>Tue</div>
+          <div>wen</div>
+          <div>thur</div>
+          <div>fri</div>
+          <div>sat</div>
+          <div>Sun</div>
         </div>
         <div className="grid grid-cols-7 gap-1">
           {days}
@@ -130,22 +130,22 @@ export default function FinancialCalendar() {
     <div className="min-h-screen bg-gray-100  items-center justify-center p-8 font-sans ">
       <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           
-          <h2 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2"><DollarSign className="w-8 h-8" /> Nova Conta</h2>
+          <h2 className="text-3xl font-bold mb-6 text-gray-900 flex items-center gap-2"><DollarSign className="w-8 h-8" /> New Account</h2>
           
           <form onSubmit={handleAddAccount} className="flex flex-wrap justify-between">
             <div>
-              <label className="block text-gray-700 font-semibold mb-1">Tipo de Conta</label>
+              <label className="block text-gray-700 font-semibold mb-1">Account Type</label>
               <select
                 value={newAccount.type}
                 onChange={(e) => setNewAccount({ ...newAccount, type: e.target.value })}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="payable">Conta a Pagar</option>
-                <option value="receivable">Conta a Receber</option>
+                <option value="payable">Account Payable</option>
+                <option value="receivable">Accounts Receivable</option>
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-1">Descrição</label>
+              <label className="block text-gray-700 font-semibold mb-1">Description</label>
               <input
                 type="text"
                 value={newAccount.description}
@@ -155,7 +155,7 @@ export default function FinancialCalendar() {
               />
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-1">Valor (R$)</label>
+              <label className="block text-gray-700 font-semibold mb-1">Value ($)</label>
               <input
                 type="number"
                 value={newAccount.amount}
@@ -178,12 +178,12 @@ export default function FinancialCalendar() {
               className="w-full mt-6 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-300 shadow-md"
            onClick={() => setShowCalendar(!showCalendar)}
            >
-              Adicionar Conta
+              Add Account
             </button>
           </form>
         
       <div className="w-full max-w-screem">
-              <label className="flex text-gray-700 font-bold text-3xl mt-4"><Calendar className='mt-2'/>Calendário</label>
+              <label className="flex text-gray-700 font-bold text-3xl mt-4"><Calendar className='mt-2'/>Calendar</label>
         <button
             onClick={() => setShowCalendar(!showCalendar)}
             className="w-full bg-blue-600 mt-2 text-white py-2 px-4 rounded-xl font-semibold  hover:bg-blue-700 transition duration-300 shadow-lg"
@@ -196,9 +196,9 @@ export default function FinancialCalendar() {
         
 
         <div className="bg-white p-6 rounded-lg shadow-2xl w-full mt-8">
-          <h2 className="text-2xl font-bold mb-4">Resumo das Contas</h2>
+          <h2 className="text-2xl font-bold mb-4">Summary of Accounts</h2>
           {accounts.length === 0 ? (
-            <p className="text-gray-500">Nenhuma conta registada ainda.</p>
+            <p className="text-gray-500">No accounts registered yet.</p>
           ) : (
             <ul className="space-y-4">
               {accounts.map((account, index) => (
@@ -214,7 +214,7 @@ export default function FinancialCalendar() {
                       </p>
                     </div>
                     <span className={`font-bold text-lg ${account.type === 'payable' ? 'text-red-600' : 'text-green-600'}`}>
-                      {account.amount.toFixed(2)} R$
+                      {account.amount.toFixed(2)} $
                     </span>
                   </div>
                 </li>

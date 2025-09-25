@@ -12,7 +12,7 @@ import {
   Search,
 } from 'lucide-react';
 import { api } from '../lib/api';
-import FinancialCalendar from './Fpage';
+import FinancialCalendar from './AccountsPayablePage';
 
 interface Report {
   totalReceitas: number;
