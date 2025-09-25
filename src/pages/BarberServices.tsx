@@ -54,7 +54,7 @@ export default function Services ()  {
       setServices(data);
     } catch (error: any) {
        console.error('Erro na requisição:', error.response?.status, error.message);
-      showMessage(error.message || 'Erro ao buscar serviços.', 'error');
+      showMessage(error.message || 'Error searching for services', 'error');
     } finally {
       setLoading(false);
     }
@@ -70,12 +70,12 @@ export default function Services ()  {
     
     // Validações
     if (Number(form.duration) <= 0) {
-      showMessage('Duração deve ser maior que zero.', 'error');
+      showMessage('Duration must be greater than zero.', 'error');
       setFormLoading(false);
       return;
     }
     if (Number(form.price) < 0) {
-      showMessage('Preço não pode ser negativo.', 'error');
+      showMessage('Price cannot be negative.', 'error');
       setFormLoading(false);
       return;
     }
@@ -86,22 +86,22 @@ export default function Services ()  {
           duration: Number(form.duration),
           price: Number(form.price),
         });
-        showMessage("Serviço atualizado com sucesso!", "success");
+        showMessage("Service updated successfully!", "success");
       } else {
         await api.post("/services", {
           name: form.name,
           duration: Number(form.duration),
           price: Number(form.price),
         });
-        showMessage("Serviço adicionado com sucesso!", "success");
+        showMessage("Service added successfully!", "success");
       }
 
       setForm({ id: '', name: '', duration: '', price: '' });
       setEditing(false);
-      showMessage(editing ? 'Serviço atualizado com sucesso!' : 'Serviço adicionado com sucesso!', 'success');
+      showMessage(editing ? 'Service updated successfully!' : 'Service added successfully!', 'success');
       fetchServices();
     } catch (err: any) {
-      showMessage(err.message || 'Erro ao salvar serviço.', 'error');
+      showMessage(err.message || 'Error saving service.', 'error');
     } finally {
       setFormLoading(false);
     }
@@ -124,10 +124,10 @@ export default function Services ()  {
 
     try {
       await api.delete(`/services/${serviceToDelete.id}`,);
-      showMessage('Serviço removido com sucesso!', 'success');
+      showMessage('Service removed successfully!', 'success');
       fetchServices();
     } catch (err: any) {
-      showMessage(err.message || 'Erro ao remover serviço.', 'error');
+      showMessage(err.message || 'Error removing service.', 'error');
     } finally {
       setFormLoading(false);
       setServiceToDelete(null);
@@ -155,22 +155,22 @@ export default function Services ()  {
       {isDeleteModalOpen && serviceToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 shadow-xl w-full max-w-md">
-            <h4 className="text-xl font-bold mb-4">Confirmar Exclusão</h4>
-            <p className="mb-6">Tem certeza que deseja remover o serviço **{serviceToDelete.name}**?</p>
+            <h4 className="text-xl font-bold mb-4">Confirm Deletion</h4>
+            <p className="mb-6"> Are you sure you want to remove the service?**{serviceToDelete.name}**?</p>
             <div className="flex justify-end gap-4">
               <button
                 type="button"
                 className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
                 onClick={cancelDelete}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 type="button"
                 className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition flex items-center gap-2"
                 onClick={confirmDelete}
               >
-                Sim, remover
+                Yes, remove
               </button>
             </div>
           </div>
@@ -178,29 +178,29 @@ export default function Services ()  {
       )}
 
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-gray-900">Gerenciar Serviços</h2>
+        <h2 className="text-3xl font-bold mb-6 text-gray-900">Manage Services</h2>
 
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
             {editing ? <Pencil className="w-6 h-6 text-yellow-500" /> : <PlusCircle className="w-6 h-6 text-blue-500" />}
-            {editing ? 'Editar Serviço' : 'Novo Serviço'}
+            {editing ? 'Edit Service' : 'New Service'}
           </h3>
           <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="flex flex-col col-span-1 md:col-span-1">
-              <label htmlFor="serviceName" className="text-sm font-medium text-gray-600 mb-1">Nome</label>
+              <label htmlFor="serviceName" className="text-sm font-medium text-gray-600 mb-1">Name</label>
               <input
                 ref={nameInputRef}
                 id="serviceName"
                 name="name"
                 className="border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Corte de Cabelo"
+                placeholder="Ex: Haircut"
                 value={form.name}
                 onChange={handleFormChange}
                 required
               />
             </div>
             <div className="flex flex-col col-span-1">
-              <label htmlFor="serviceDuration" className="text-sm font-medium text-gray-600 mb-1">Duração (min)</label>
+              <label htmlFor="serviceDuration" className="text-sm font-medium text-gray-600 mb-1">Duration (min)</label>
               <input
                 id="serviceDuration"
                 name="duration"
@@ -214,7 +214,7 @@ export default function Services ()  {
               />
             </div>
             <div className="flex flex-col col-span-1">
-              <label htmlFor="servicePrice" className="text-sm font-medium text-gray-600 mb-1">Preço (R$)</label>
+              <label htmlFor="servicePrice" className="text-sm font-medium text-gray-600 mb-1">Price ($)</label>
               <input
                 id="servicePrice"
                 name="price"
@@ -234,7 +234,7 @@ export default function Services ()  {
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${editing ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
                 disabled={formLoading}
               >
-                {formLoading ? <ButtonSpinner /> : (editing ? <><Pencil className="w-5 h-5" /> Atualizar</> : <><PlusCircle className="w-5 h-5" /> Adicionar</>)}
+                {formLoading ? <ButtonSpinner /> : (editing ? <><Pencil className="w-5 h-5" /> To update</> : <><PlusCircle className="w-5 h-5" /> To add</>)}
               </button>
               {editing && (
                 <button
@@ -250,11 +250,11 @@ export default function Services ()  {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-bold mb-4 text-gray-800">Serviços Cadastrados</h3>
-          {loading && <div className="text-center text-gray-500 py-8">Carregando serviços...</div>}
+          <h3 className="text-xl font-bold mb-4 text-gray-800">Registered Services</h3>
+          {loading && <div className="text-center text-gray-500 py-8">Loading services...</div>}
           {!loading && services.length === 0 && (
             <div className="text-center text-gray-500 py-8">
-              Nenhum serviço cadastrado. Comece adicionando um novo serviço acima.
+              No services registered. Start adding a new service above.
             </div>
           )}
           <div className="grid grid-cols-1 gap-4">
@@ -262,8 +262,8 @@ export default function Services ()  {
               <div key={service.id} className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between transition hover:shadow-md">
                 <div className="mb-2 md:mb-0">
                   <div className="text-lg font-semibold">{service.name}</div>
-                  <div className="text-sm text-gray-600">Duração: {service.duration} min</div>
-                  <div className="text-md font-bold text-blue-600">R$ {Number(service.price).toFixed(2)}</div>
+                  <div className="text-sm text-gray-600">Duration: {service.duration} min</div>
+                  <div className="text-md font-bold text-blue-600">$ {Number(service.price).toFixed(2)}</div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -272,7 +272,7 @@ export default function Services ()  {
                     disabled={formLoading}
                   >
                     <Pencil className="w-4 h-4" />
-                    Editar
+                    Edit
                   </button>
                   <button
                     className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 hover:bg-red-700 transition"
@@ -280,7 +280,7 @@ export default function Services ()  {
                     disabled={formLoading}
                   >
                     <Trash className="w-4 h-4" />
-                    Remover
+                    Remove
                   </button>
                 </div>
               </div>
