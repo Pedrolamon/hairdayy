@@ -56,7 +56,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
       <div className="flex items-center gap-3 mb-6">
         <Users className="h-6 w-6 text-blue-500" />
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-          Métricas de Clientes
+          Customer Metrics
         </h2>
       </div>
 
@@ -66,7 +66,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total de Clientes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Customers</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {data.totalUniqueClients}
               </p>
@@ -78,7 +78,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
           <div className="flex items-center gap-3">
             <UserPlus className="h-8 w-8 text-green-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Novos no Mês</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">New this month</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {data.newClientsThisMonth}
               </p>
@@ -90,7 +90,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
           <div className="flex items-center gap-3">
             <Repeat className="h-8 w-8 text-purple-500" />
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Recorrentes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Recurring Customers</p>
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 {data.recurringClients}
               </p>
@@ -109,10 +109,10 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
             <Trophy className="h-6 w-6 text-yellow-500" />
             <div className="text-left">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Top Clientes Mais Fiéis
+                Top Most Loyal Customers
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {data.topLoyalClients.length} clientes com mais de 1 agendamento
+                {data.topLoyalClients.length} Customers with more than 1 appointment
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
             {data.topLoyalClients.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum cliente recorrente encontrado no período selecionado.</p>
+                <p>No returning customers found in the selectd period.</p>
               </div>
             ) : (
               data.topLoyalClients.map((client, index) => (
@@ -141,7 +141,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
                         {client.clientName}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {client.appointmentCount} agendamento{client.appointmentCount > 1 ? 's' : ''}
+                        {client.appointmentCount} Appointments{client.appointmentCount > 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -168,10 +168,10 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
             <UserPlus className="h-6 w-6 text-green-500" />
             <div className="text-left">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Novos Clientes do Mês
+                New Customers of the Month
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {data.newClientsList.length} novos clientes este mês
+                {data.newClientsList.length} New customers of the Month
               </p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
             {data.newClientsList.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhum novo cliente este mês.</p>
+                <p>No new customers this month.</p>
               </div>
             ) : (
               data.newClientsList.map((client, index) => (
@@ -202,7 +202,7 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
                         {client.clientName}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Primeiro agendamento
+                        First appointment
                       </p>
                     </div>
                   </div>
@@ -220,17 +220,17 @@ export default function ClientMetrics({ data }: ClientMetricsProps) {
       {/* Insights */}
       <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
         <h4 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">
-          💡 Insights de Clientes
+          💡 Customer Insights
         </h4>
         <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
           {data.recurringClients > 0 && (
-            <p>• {((data.recurringClients / data.totalUniqueClients) * 100).toFixed(1)}% dos seus clientes são recorrentes</p>
+            <p>• {((data.recurringClients / data.totalUniqueClients) * 100).toFixed(1)}% of your customers are recurring</p>
           )}
           {data.newClientsThisMonth > 0 && (
-            <p>• Você conquistou {data.newClientsThisMonth} novo{data.newClientsThisMonth > 1 ? 's' : ''} cliente{data.newClientsThisMonth > 1 ? 's' : ''} este mês</p>
+            <p>• You conquered {data.newClientsThisMonth} novo{data.newClientsThisMonth > 1 ? 's' : ''} cliente{data.newClientsThisMonth > 1 ? 's' : ''} this month</p>
           )}
           {data.topLoyalClients.length > 0 && (
-            <p>• Seu cliente mais fiel tem {data.topLoyalClients[0]?.appointmentCount} agendamentos</p>
+            <p>• your most loyal customer has {data.topLoyalClients[0]?.appointmentCount} appointment</p>
           )}
         </div>
       </div>
