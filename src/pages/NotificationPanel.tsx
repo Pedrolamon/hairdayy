@@ -115,7 +115,7 @@ export default function NotificationPanel() {
         setNotifications(prev =>
             prev.map(n => (n.id === id ? { ...n, read: true } : n))
         );
-        showMessage('Notificação marcada como lida!');
+        showMessage('Notification marked as read!');
 
         try {
             await api.put(`/notifications/history/${id}/read`,);
@@ -124,13 +124,13 @@ export default function NotificationPanel() {
             setNotifications(prev =>
                 prev.map(n => (n.id === id ? { ...n, read: false } : n))
             );
-            showMessage('Erro ao marcar como lida. Tente novamente.', 5000);
+            showMessage('Error marking as read. Please try again.', 5000);
         }
     };
 
     const deleteNotification = async (id: number) => {
         setRemoving(prev => new Set(prev).add(id));
-        showMessage('Notificação excluída!');
+        showMessage('Notification deleted!');
 
         try {
             await api.delete(`/notifications/history/${id}`);
@@ -143,13 +143,13 @@ export default function NotificationPanel() {
                 });
             }, 400);
         } catch (error) {
-            console.error("Erro ao excluir:", error);
+            console.error("Error deleting:", error);
             setRemoving(prev => {
                 const next = new Set(prev);
                 next.delete(id);
                 return next;
             });
-            showMessage('Erro ao excluir notificação. Tente novamente.', 5000);
+            showMessage('Error deleting notification. Please try again..', 5000);
         }
     };
 
@@ -158,25 +158,25 @@ export default function NotificationPanel() {
         try {
             await api.put('/notifications/history/mark-all-read',);
             await fetchNotifications();
-            showMessage('Todas as notificações marcadas como lidas!');
+            showMessage('All notifications marked as read!');
         } catch (error) {
             console.error("Erro ao marcar todas como lidas:", error);
-            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
+            showMessage('Error processing the action. Please try again..', 5000);
         } finally {
             setActionLoading(false);
         }
     };
 
     const deleteAll = async () => {
-        if (!window.confirm('Tem certeza que deseja excluir todas as notificações?')) return;
+        if (!window.confirm('Are you sure you want to delete all notifications?')) return;
         setActionLoading(true);
         try {
             await api.delete('/notifications/history/delete-all',);
             await fetchNotifications();
-            showMessage('Todas as notificações excluídas!');
+            showMessage('All notifications deleted!');
         } catch (error) {
-            console.error("Erro ao excluir todas:", error);
-            showMessage('Erro ao processar a ação. Tente novamente.', 5000);
+            console.error("Error deleting all:", error);
+            showMessage('Error processing the action. Please try again.', 5000);
         } finally {
             setActionLoading(false);
         }
@@ -204,8 +204,8 @@ export default function NotificationPanel() {
         <div className="p-4 md:p-8 max-w-4xl mx-auto bg-white rounded-2xl shadow-xl">
             {/* Cabeçalho e Título */}
             <div className="mb-6 border-b border-gray-200 pb-4">
-                <h2 className="text-3xl font-extrabold text-gray-800">Notificações</h2>
-                <p className="text-sm text-gray-500 mt-1">Gerencie seu histórico de alertas e novidades.</p>
+                <h2 className="text-3xl font-extrabold text-gray-800">Notifications</h2>
+                <p className="text-sm text-gray-500 mt-1">Manage your alert history and news.</p>
             </div>
 
             {/* Mensagem de Feedback */}
@@ -219,7 +219,7 @@ export default function NotificationPanel() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder="Search..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -230,9 +230,9 @@ export default function NotificationPanel() {
                         onChange={e => { setFilter(e.target.value as any); setPage(1); }}
                         className="px-4 py-2 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     >
-                        <option value="all">Todas</option>
-                        <option value="unread">Não lidas</option>
-                        <option value="read">Lidas</option>
+                        <option value="all">All</option>
+                        <option value="unread">unread</option>
+                        <option value="read">read</option>
                     </select>
                     <button
                         type="button"
@@ -240,7 +240,7 @@ export default function NotificationPanel() {
                         disabled={actionLoading}
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
-                        {actionLoading ? 'Aguarde...' : 'Marcar todas como lidas'}
+                        {actionLoading ? 'Wait...' : 'Mark all as read'}
                     </button>
                     <button
                         type="button"
@@ -248,7 +248,7 @@ export default function NotificationPanel() {
                         disabled={actionLoading}
                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                     >
-                        {actionLoading ? 'Aguarde...' : 'Excluir todas'}
+                        {actionLoading ? 'Wait...' : 'Delete all'}
                     </button>
                 </div>
             </div>
@@ -257,11 +257,11 @@ export default function NotificationPanel() {
             {loading ? (
                 <div className="text-center py-10 text-gray-500">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto"></div>
-                    <p className="mt-2">Carregando...</p>
+                    <p className="mt-2">Loading...</p>
                 </div>
             ) : filteredNotifications.length === 0 ? (
                 <div className="text-center py-10 text-gray-500 border-t border-gray-200">
-                    Nenhuma notificação encontrada.
+                    No notifications found.
                 </div>
             ) : (
                 <>
@@ -289,14 +289,14 @@ export default function NotificationPanel() {
                                             onClick={() => markAsRead(n.id)}
                                             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                                         >
-                                            Marcar como lida
+                                            Mark as read
                                         </button>
                                     )}
                                     <button
                                         onClick={() => deleteNotification(n.id)}
                                         className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
                                     >
-                                        Excluir
+                                        Delete
                                     </button>
                                 </div>
                             </li>
@@ -311,15 +311,15 @@ export default function NotificationPanel() {
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
                             >
-                                Anterior
+                                Previous
                             </button>
-                            <span className="text-lg font-semibold">Página {page} de {totalPages}</span>
+                            <span className="text-lg font-semibold">Page {page} of {totalPages}</span>
                             <button
                                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => setPage(p => p + 1)}
                                 disabled={page >= totalPages}
                             >
-                                Próxima
+                                Next
                             </button>
                         </div>
                     )}
