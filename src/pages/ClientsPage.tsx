@@ -49,7 +49,7 @@ export default function Clients() {
       const { data } = await api.get<Client[]>('/Clients');
       setClients(data);
     } catch {
-      setError('Erro ao buscar clientes.');
+      setError('Error searching for clients.');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function Clients() {
       const { data } = await api.get(`/Clients/${client.id}`);
       setAppointments(data.appointments || []);
     } catch {
-      setError('Erro ao buscar histórico.');
+      setError('Error fetching history.');
     } finally {
       setLoading(false);
     }
@@ -74,10 +74,10 @@ export default function Clients() {
     setNotesSuccess('');
     try {
       await api.put(`/Clients/${selected?.id}/notes`, { notes });
-      setNotesSuccess('Notas salvas!');
+      setNotesSuccess('Notes saved!');
       fetchClients();
     } catch {
-      setError('Erro ao salvar notas.');
+      setError('Error saving notes.');
     } finally {
       setNotesLoading(false);
     }
@@ -92,7 +92,7 @@ export default function Clients() {
       setSelected({ ...selected, isBlocked: !selected.isBlocked });
       fetchClients();
     } catch {
-      setError(`Erro ao ${selected.isBlocked ? 'desbloquear' : 'bloquear'} o cliente.`);
+      setError(`Erro ao ${selected.isBlocked ? 'unlock' : 'block'} the client.`);
     } finally {
       setIsBlocking(false);
     }
@@ -104,25 +104,25 @@ export default function Clients() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen dark:bg-gray-900">
       <h3 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-        Gerenciamento de Clientes
+        Customer Management
       </h3>
 
       <div className="flex gap-4 mb-6">
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex-1">
           <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-            Total de Clientes
+            Total Customers
           </div>
           <div className="text-2xl font-bold text-blue-600">{totalClients}</div>
         </div>
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex-1">
           <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-            Clientes Bloqueados
+            Blocked Customers
           </div>
           <div className="text-2xl font-bold text-red-600">{blockedClients}</div>
         </div>
       </div>
 
-      {loading && <div className="text-gray-500 dark:text-gray-400">Carregando...</div>}
+      {loading && <div className="text-gray-500 dark:text-gray-400">Loading...</div>}
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
       
       {!selected ? (
@@ -135,7 +135,7 @@ export default function Clients() {
                     {client.name}
                     {client.isBlocked && (
                       <span className="ml-2 text-red-500 font-normal text-sm">
-                        (Bloqueado)
+                        (Blocked)
                       </span>
                     )}
                   </div>
@@ -147,11 +147,11 @@ export default function Clients() {
                   className="mt-2 md:mt-0 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
                   onClick={() => fetchDetails(client)}
                 >
-                  Ver detalhes
+                  See details
                 </button>
               </li>
             ))}
-            {clients.length === 0 && !loading && <li className="p-4 text-center text-gray-500 dark:text-gray-400">Nenhum cliente encontrado.</li>}
+            {clients.length === 0 && !loading && <li className="p-4 text-center text-gray-500 dark:text-gray-400">No customers found.</li>}
           </ul>
         </div>
       ) : (
@@ -161,7 +161,7 @@ export default function Clients() {
               className="text-sm text-gray-500 dark:text-gray-400 hover:underline flex items-center gap-1"
               onClick={() => setSelected(null)}
             >
-              &larr; Voltar
+              &larr; To go back
             </button>
             <button
               className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition ${
@@ -173,12 +173,12 @@ export default function Clients() {
               {isBlocking ? (
                 <>
                   <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  {selected.isBlocked ? 'Desbloqueando...' : 'Bloqueando...'}
+                  {selected.isBlocked ? 'Unlocking...' : 'Blocking...'}
                 </>
               ) : (
                 <>
                   <Ban className="h-4 w-4" />
-                  {selected.isBlocked ? 'Desbloquear Cliente' : 'Bloquear Cliente'}
+                  {selected.isBlocked ? 'Unlock Client' : 'Block Client'}
                 </>
               )}
             </button>
@@ -194,7 +194,7 @@ export default function Clients() {
           </div>
           
           <div className="mb-4">
-            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Notas do Cliente</h4>
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Customer Notes</h4>
             <div className="relative">
               <textarea
                 ref={notesInputRef}
@@ -213,14 +213,14 @@ export default function Clients() {
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
-                {notesLoading ? 'Salvando...' : 'Salvar'}
+                {notesLoading ? 'Saving...' : 'Save'}
               </button>
               {notesSuccess && <div className="text-green-600 text-sm mt-1">{notesSuccess}</div>}
             </div>
           </div>
           
           <div className="mt-6">
-            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Histórico de Agendamentos</h4>
+            <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Appointment History</h4>
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <ul className="divide-y divide-gray-200 dark:divide-gray-600">
                 {appointments.length > 0 ? (
@@ -230,7 +230,7 @@ export default function Clients() {
                         {new Date(app.date).toLocaleDateString()} às {app.startTime}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
-                        Serviços: {app.services.map(s => s.name).join(', ')}
+                        Services: {app.services.map(s => s.name).join(', ')}
                       </div>
                       <div className={`text-sm font-medium ${app.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`}>
                         Status: {app.status === 'confirmed' ? 'Confirmado' : 'Pendente'}
@@ -238,7 +238,7 @@ export default function Clients() {
                     </li>
                   ))
                 ) : (
-                  <li className="text-center py-4 text-gray-500 dark:text-gray-400">Nenhum agendamento encontrado.</li>
+                  <li className="text-center py-4 text-gray-500 dark:text-gray-400">No appointments found.</li>
                 )}
               </ul>
             </div>
