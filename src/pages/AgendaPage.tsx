@@ -209,7 +209,7 @@ interface EditAppointmentForm {
     try {
       await api.put(`/appointments/${id}`, { status }); 
       fetchAppointments();
-      showToast('Status do agendamento atualizado!', 'success');
+      showToast('Scheduling status updated!', 'success');
     } catch (e: any) {
       setError(e.message);
       showToast(e.message, 'error');
@@ -225,7 +225,7 @@ interface EditAppointmentForm {
     try {
       await api.delete(`/appointments/${appointmentToDelete.id}`,);
       fetchAppointments();
-      showToast('Agendamento deletado com sucesso!', 'success');
+      showToast('Schedule deleted successfully!', 'success');
       setShowDeleteModal(false);
     } catch (e: any) {
       setError(e.message);
@@ -238,8 +238,8 @@ interface EditAppointmentForm {
   const handleNewFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !newForm.date || !newForm.serviceId || !newForm.startTime) {
-      setNewFormError('Por favor, preencha todos os campos obrigatórios.');
-      showToast('Por favor, preencha todos os campos obrigatórios.', 'error');
+      setNewFormError('Please fill in all required fields..');
+      showToast('Please fill in all required fields.', 'error');
       return;
     }
     setNewFormLoading(true);
@@ -247,7 +247,7 @@ interface EditAppointmentForm {
 
     try {
       const selectedService = services.find(s => s.id === newForm.serviceId);
-      if (!selectedService) throw new Error('Serviço inválido.');
+      if (!selectedService) throw new Error('Invalid service.');
 
       const [startHour, startMinute] = newForm.startTime.split(':').map(Number);
       const startDate = new Date(`${newForm.date}T${newForm.startTime}:00`);
@@ -271,7 +271,7 @@ interface EditAppointmentForm {
       setShowNewForm(false);
       setNewForm({ date: '', serviceId: '', startTime: '', clientName: '' });
       fetchAppointments();
-      showToast('Agendamento criado com sucesso!', 'success');
+      showToast('Appointment created successfully!', 'success');
     } catch (e: any) {
       setNewFormError(e.message);
       showToast(e.message, 'error');
@@ -318,7 +318,7 @@ interface EditAppointmentForm {
       setShowEditModal(false);
       setShowDetailsModal(false);
       fetchAppointments();
-      showToast('Agendamento atualizado com sucesso!', 'success');
+      showToast('Schedule updated successfully!', 'success');
     } catch (e: any) {
       setEditFormError(e.message);
       showToast(e.message, 'error');
@@ -372,7 +372,7 @@ interface EditAppointmentForm {
             <CalendarClock className="text-blue-600 h-8 w-8"/>
             <div>
               <h3 className="text-xl font-semibold text-gray-800">{dailyCount}</h3>
-              <p className="text-sm text-gray-600">Agendamentos Hoje</p>
+              <p className="text-sm text-gray-600">Appointments Today</p>
             </div>
           </div>
 
@@ -380,7 +380,7 @@ interface EditAppointmentForm {
             <CalendarDays className="text-green-600 h-8 w-8"/>
             <div>
               <h3 className="text-xl font-semibold text-gray-800">{weeklyCount}</h3>
-              <p className="text-sm text-gray-600">Agendamentos na Semana</p>
+              <p className="text-sm text-gray-600">Weekly Appointments</p>
             </div>
           </div>
 
@@ -388,7 +388,7 @@ interface EditAppointmentForm {
             <BarChart className="text-purple-600 h-8 w-8"/>
             <div>
               <h3 className="text-xl font-semibold text-gray-800">{monthlyCount}</h3>
-              <p className="text-sm text-gray-600">Agendamentos no Mês</p>
+              <p className="text-sm text-gray-600">Appointments in the Month</p>
             </div>
           </div>
         </div>
@@ -402,14 +402,14 @@ interface EditAppointmentForm {
             onClick={() => setShowNewForm(!showNewForm)}
           >
             <Plus className="h-5 w-5" />
-            {showNewForm ? 'Fechar' : 'Novo Agendamento'}
+            {showNewForm ? 'To close' : 'New Schedule'}
           </button>
         </div>
 
         <div className="mb-6">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <Filter className="h-5 w-5 text-gray-500"/>
-            <span className="text-sm font-medium text-gray-700 mr-2">Filtrar por:</span>
+            <span className="text-sm font-medium text-gray-700 mr-2">Filter by:</span>
             
             <button
               onClick={() => {
@@ -422,7 +422,7 @@ interface EditAppointmentForm {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Hoje
+              Today
             </button>
             <button
               onClick={() => setFilterType('week')}
@@ -432,7 +432,7 @@ interface EditAppointmentForm {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Esta Semana
+             This Week 
             </button>
             <button
               onClick={() => setFilterType('month')}
@@ -442,7 +442,7 @@ interface EditAppointmentForm {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Este Mês
+             This Month
             </button>
             <button
               onClick={() => setFilterType('specific')}
@@ -452,7 +452,7 @@ interface EditAppointmentForm {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Data Específica
+              Specific Date
             </button>
             <button
               onClick={() => setFilterType('all')}
@@ -462,7 +462,7 @@ interface EditAppointmentForm {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              Todos
+              All
             </button>
           </div>
 
@@ -481,7 +481,7 @@ interface EditAppointmentForm {
 
         {showNewForm && (
           <div className="bg-gray-100 p-6 rounded-xl mb-6 shadow-inner animate-fade-in">
-            <h2 className="text-xl font-semibold mb-4 text-gray-700">Criar Novo Agendamento</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">Create New Schedule</h2>
             <form onSubmit={handleNewFormSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
@@ -496,7 +496,7 @@ interface EditAppointmentForm {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Serviço</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Service</label>
                 <select
                   name="serviceId"
                   className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -504,7 +504,7 @@ interface EditAppointmentForm {
                   onChange={e => setNewForm(prev => ({ ...prev, serviceId: e.target.value }))}
                   required
                 >
-                  <option value="">Selecione um serviço</option>
+                  <option value="">Select a service</option>
                   {services.map(s => (
                     <option key={s.id} value={s.id}>{s.name} ({s.duration} min)</option>
                   ))}
@@ -512,11 +512,11 @@ interface EditAppointmentForm {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
                 <input
                   name="clientName"
                   type="text"
-                  placeholder="Nome do Cliente"
+                  placeholder="Customer Name"
                   className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   value={newForm.clientName}
                   onChange={e => setNewForm(prev => ({ ...prev, clientName: e.target.value }))}
@@ -530,7 +530,7 @@ interface EditAppointmentForm {
                   className="w-full bg-green-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-green-700 transition duration-300"
                   disabled={newFormLoading}
                 >
-                  {newFormLoading ? 'Salvando...' : 'Criar'}
+                  {newFormLoading ? 'Saving...' : 'To create'}
                 </button>
               </div>
             </form>
@@ -539,7 +539,7 @@ interface EditAppointmentForm {
               <div className="col-span-1 md:col-span-2 lg:col-span-1">
                 {newForm.date && newForm.serviceId && (
                   <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Horários Disponíveis</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Available Times</label>
                     <div className="flex flex-wrap gap-2">
                       {availableSlots.length > 0 ? (
                         availableSlots.map(slot => (
@@ -554,7 +554,7 @@ interface EditAppointmentForm {
                           </button>
                         ))
                       ) : (
-                        <span className="text-gray-500 text-sm">Nenhum horário disponível para a data e serviço.</span>
+                        <span className="text-gray-500 text-sm">No time available for the date and service.</span>
                       )}
                     </div>
                   </>
@@ -574,11 +574,11 @@ interface EditAppointmentForm {
               <thead className="bg-gray-100">
                 <tr className="text-left text-sm text-gray-600 uppercase">
                   <th className="py-3 px-4 font-semibold">Data</th>
-                  <th className="py-3 px-4 font-semibold">Horário</th>
-                  <th className="py-3 px-4 font-semibold">Cliente</th>
-                  <th className="py-3 px-4 font-semibold">Serviços</th>
+                  <th className="py-3 px-4 font-semibold">Time</th>
+                  <th className="py-3 px-4 font-semibold">Customer</th>
+                  <th className="py-3 px-4 font-semibold">Services</th>
                   <th className="py-3 px-4 font-semibold">Status</th>
-                  <th className="py-3 px-4 font-semibold text-center">Ações</th>
+                  <th className="py-3 px-4 font-semibold text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -617,7 +617,7 @@ interface EditAppointmentForm {
             </table>
           </div>
         ) : (
-          <div className="text-center text-gray-500 text-lg mt-8 p-8 border border-dashed rounded-lg bg-gray-50">Nenhum agendamento encontrado para a data selecionada.</div>
+          <div className="text-center text-gray-500 text-lg mt-8 p-8 border border-dashed rounded-lg bg-gray-50">No appointments found for the selected date.</div>
         )}
       </div>
 
@@ -635,15 +635,15 @@ interface EditAppointmentForm {
                     <input name="date" type="date" value={editForm.date} onChange={handleEditFormChange} className="w-full border-gray-300 rounded-lg shadow-sm" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Horário de Início</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                     <input name="startTime" type="time" value={editForm.startTime} onChange={handleEditFormChange} className="w-full border-gray-300 rounded-lg shadow-sm" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Horário de Término</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
                     <input name="endTime" type="time" value={editForm.endTime} onChange={handleEditFormChange} className="w-full border-gray-300 rounded-lg shadow-sm" required />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Serviços</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Services</label>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {services.map(s => (
                         <div key={s.id} className="relative flex items-center">
@@ -664,19 +664,19 @@ interface EditAppointmentForm {
                 </div>
                 {editFormError && <div className="text-red-500 text-sm mb-4">{editFormError}</div>}
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">Cancelar</button>
+                  <button type="button" onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">Cancel</button>
                   <button type="submit" disabled={editFormLoading} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition">
-                    {editFormLoading ? 'Salvando...' : 'Salvar Alterações'}
+                    {editFormLoading ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </form>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                  <p className="flex items-center text-sm text-gray-700"><Users size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Cliente:</span> {selectedAppointment.clientName || selectedAppointment.client?.name}</p>
+                  <p className="flex items-center text-sm text-gray-700"><Users size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Customer:</span> {selectedAppointment.clientName || selectedAppointment.client?.name}</p>
                   <p className="flex items-center text-sm text-gray-700"><Calendar size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Data:</span> {selectedAppointment.date.split('T')[0].split('-').reverse().join('/')}</p>
-                  <p className="flex items-center text-sm text-gray-700"><Clock size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Horário:</span> {selectedAppointment.startTime} - {selectedAppointment.endTime}</p>
-                  <p className="flex items-center text-sm text-gray-700"><Tag size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Serviços:</span> {selectedAppointment.services.map(s => s.service.name).join(', ')}</p>
+                  <p className="flex items-center text-sm text-gray-700"><Clock size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Time:</span> {selectedAppointment.startTime} - {selectedAppointment.endTime}</p>
+                  <p className="flex items-center text-sm text-gray-700"><Tag size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Services:</span> {selectedAppointment.services.map(s => s.service.name).join(', ')}</p>
                 </div>
                 <div className="mt-4">
                   <p className="flex items-center text-sm text-gray-700"><Bell size={16} className="mr-2 text-gray-500" /> <span className="font-semibold text-gray-900">Status:</span>
@@ -693,9 +693,9 @@ interface EditAppointmentForm {
                 </div>
                 <div className="mt-6 flex justify-end gap-2">
                   <button onClick={openEditModal} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition">
-                    <Edit size={16} className="inline-block mr-1" /> Editar
+                    <Edit size={16} className="inline-block mr-1" /> Edit
                   </button>
-                  <button onClick={() => setShowDetailsModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">Fechar</button>
+                  <button onClick={() => setShowDetailsModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">To close</button>
                 </div>
               </>
             )}
@@ -706,12 +706,12 @@ interface EditAppointmentForm {
       {showDeleteModal && appointmentToDelete && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm relative">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Confirmar Deleção</h2>
-            <p className="text-gray-700 mb-6">Tem certeza que deseja deletar o agendamento de <span className="font-semibold">{appointmentToDelete.client?.name}</span> em <span className="font-semibold">{new Date(appointmentToDelete.date).toLocaleDateString()}</span> às <span className="font-semibold">{appointmentToDelete.startTime}</span>? Esta ação é irreversível.</p>
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Confirm Deletion</h2>
+            <p className="text-gray-700 mb-6">Are you sure you want to delete the appointment <span className="font-semibold">{appointmentToDelete.client?.name}</span> in <span className="font-semibold">{new Date(appointmentToDelete.date).toLocaleDateString()}</span> to the <span className="font-semibold">{appointmentToDelete.startTime}</span>? This action is irreversible.</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">Cancelar</button>
+              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition">Cancel</button>
               <button onClick={handleDelete} disabled={actionLoading === appointmentToDelete.id} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition">
-                {actionLoading === appointmentToDelete.id ? 'Deletando...' : 'Deletar'}
+                {actionLoading === appointmentToDelete.id ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
